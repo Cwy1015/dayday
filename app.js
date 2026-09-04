@@ -202,3 +202,23 @@ document.querySelector('#recordForm').addEventListener('submit', (event) => {
 
 syncCloudSessions();
 refreshAuthButton();
+
+const profileDefaults = JSON.parse(localStorage.getItem('exam-profile') || 'null') || { name: '林同学', exam: '国考', days: 72 };
+function renderProfile() {
+  document.querySelector('#profileName').textContent = profileDefaults.name;
+  document.querySelector('#profileGoal').textContent = `${profileDefaults.exam} · 还有 ${profileDefaults.days} 天`;
+  document.querySelector('#profileAvatar').textContent = profileDefaults.name.slice(0, 1);
+}
+document.querySelectorAll('[data-action="edit-profile"]').forEach((button) => button.addEventListener('click', () => {
+  const name = window.prompt('修改昵称', profileDefaults.name);
+  if (!name?.trim()) return;
+  const exam = window.prompt('修改考试目标', profileDefaults.exam) || profileDefaults.exam;
+  const days = Number(window.prompt('修改剩余天数', profileDefaults.days));
+  profileDefaults.name = name.trim();
+  profileDefaults.exam = exam.trim();
+  profileDefaults.days = Number.isFinite(days) && days >= 0 ? days : profileDefaults.days;
+  localStorage.setItem('exam-profile', JSON.stringify(profileDefaults));
+  renderProfile();
+  showToast('个人目标已保存');
+}));
+renderProfile();
