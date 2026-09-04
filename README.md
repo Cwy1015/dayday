@@ -20,3 +20,9 @@ python3 -m http.server 4173
 - 错题复盘队列和错误类型分组
 - 开始训练、能力分析、备考计划等导航视图
 - 桌面端和移动端响应式布局
+
+## 接入云端数据
+
+1. 在 Supabase 项目的 SQL Editor 中执行 `supabase-schema.sql`。
+2. `supabase-config.js` 已配置项目 URL 和 publishable key，网页会优先写入 `training_sessions`，失败时暂存到当前浏览器。
+3. 当前表策略按登录用户隔离；接入正式环境前，建议在网页中增加 Supabase Auth 登录。

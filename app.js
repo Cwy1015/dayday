@@ -3,6 +3,28 @@ const views = document.querySelectorAll('.view');
 const toast = document.querySelector('#toast');
 const tasks = document.querySelectorAll('.task input');
 const recordModal = document.querySelector('#recordModal');
+const supabase = window.SUPABASE_CONFIG;
+
+async function cloudRequest(table, options = {}) {
+  if (!supabase?.url || !supabase?.anonKey) return null;
+  const response = await fetch(`${supabase.url}/rest/v1/${table}`, {
+    ...options,
+    headers: { apikey: supabase.anonKey, Authorization: `Bearer ${supabase.anonKey}`, 'Content-Type': 'application/json', Prefer: 'return=representation', ...(options.headers || {}) }
+  });
+  if (!response.ok) throw new Error(`Supabase ${response.status}`);
+  return response.status === 204 ? null : response.json();
+}
+
+async function syncCloudSessions() {
+  try {
+    const remoteSessions = await cloudRequest('training_sessions?select=total,correct');
+    if (!remoteSessions?.length) return;
+    const total = remoteSessions.reduce((sum, item) => sum + item.total, 186);
+    const correct = remoteSessions.reduce((sum, item) => sum + item.correct, 0);
+    document.querySelector('#questionStat').innerHTML = `${total}<small> 题</small>`;
+    document.querySelector('#accuracyStat').innerHTML = `${((78.4 * 186 + correct * 100) / total).toFixed(1)}<small>%</small>`;
+  } catch { /* Local mode remains available until the SQL schema is installed. */ }
+}
 
 function showToast(message) {
   toast.textContent = message;
@@ -69,6 +91,7 @@ document.querySelector('#recordForm').addEventListener('submit', (event) => {
   const sessions = JSON.parse(localStorage.getItem('exam-sessions') || '[]');
   sessions.push({ ...data, total, correct, createdAt: new Date().toISOString() });
   localStorage.setItem('exam-sessions', JSON.stringify(sessions));
+  cloudRequest('training_sessions', { method: 'POST', body: JSON.stringify({ module: data.module, total, correct, minutes: Number(data.minutes), reason: data.reason }) }).catch(() => {});
   const addedQuestions = sessions.reduce((sum, item) => sum + item.total, 0);
   const addedCorrect = sessions.reduce((sum, item) => sum + item.correct, 0);
   document.querySelector('#questionStat').innerHTML = `${186 + addedQuestions}<small> 题</small>`;
@@ -77,3 +100,5 @@ document.querySelector('#recordForm').addEventListener('submit', (event) => {
   event.currentTarget.reset();
   showToast('训练记录已保存');
 });
+
+syncCloudSessions();
