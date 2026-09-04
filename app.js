@@ -222,3 +222,22 @@ document.querySelectorAll('[data-action="edit-profile"]').forEach((button) => bu
   showToast('个人目标已保存');
 }));
 renderProfile();
+
+document.querySelectorAll('.mistake-item').forEach((item) => {
+  const fields = [item.querySelector('.mistake-type'), item.querySelector('.mistake-copy b'), item.querySelector('.mistake-copy span')];
+  fields.forEach((field) => { if (field) { field.contentEditable = 'true'; field.title = '点击修改'; field.addEventListener('blur', saveMistakes); } });
+  const remove = document.createElement('button');
+  remove.type = 'button'; remove.className = 'mistake-delete'; remove.textContent = '删除';
+  item.appendChild(remove);
+  remove.addEventListener('click', () => { item.remove(); showToast('错题已从队列移除'); });
+});
+
+function saveMistakes() {
+  const values = [...document.querySelectorAll('.mistake-item')].map((row) => ({
+    type: row.querySelector('.mistake-type')?.textContent,
+    title: row.querySelector('.mistake-copy b')?.textContent,
+    note: row.querySelector('.mistake-copy span')?.textContent
+  }));
+  localStorage.setItem('mistake-notes', JSON.stringify(values));
+  showToast('错题内容已保存');
+}
