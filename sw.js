@@ -1,5 +1,5 @@
-const CACHE = 'beikaoju-shell-v1';
-const ASSETS = ['./', './index.html', './style.css?v=13195fc', './supabase-config.js?v=13195fc', './app.js?v=daily-breakdown-1', './manifest.json'];
+const CACHE = 'beikaoju-shell-v2';
+const ASSETS = ['./', './index.html', './style.css?v=visual-2', './supabase-config.js?v=visual-2', './app.js?v=visual-2', './manifest.json'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(ASSETS)));

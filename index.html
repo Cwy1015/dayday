@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@500;600;700;800&family=Noto+Serif+SC:wght@600;700;900&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="style.css?v=13195fc" />
+    <link rel="stylesheet" href="style.css?v=visual-2" />
   </head>
   <body>
     <main class="shell">
@@ -31,9 +31,7 @@
         <article class="stat-card accent"><span>记录天数</span><strong id="recordDays">0</strong><small>天</small></article>
       </section>
 
-      <section class="control-panel panel">
-        <div class="goal-block"><div class="panel-heading"><div><span class="section-kicker">TODAY'S TARGET</span><h2>今日目标</h2></div><button class="text-btn" id="copyYesterday" type="button">复制昨天</button></div><div class="goal-line"><strong id="todayProgress">0 / 50</strong><span>题</span><input id="dailyGoal" type="number" min="1" step="1" value="50" aria-label="每日目标题数" /><button id="saveGoal" type="button">设定</button></div><div class="goal-track"><b id="goalFill"></b></div><small id="goalText">完成目标后再收尾</small></div><div class="rhythm-block"><span class="section-kicker">STUDY RHYTHM</span><div class="rhythm-metrics"><div><strong id="streakDays">0</strong><span>连续学习</span></div><div><strong id="avgSpeed">0</strong><span>分钟 / 题</span></div><div><strong id="last7Compare">0%</strong><span>近 7 天正确率</span></div></div></div>
-      </section>
+      <section class="rhythm-panel panel"><div><span class="section-kicker">STUDY RHYTHM</span><h2>学习节奏</h2></div><div class="rhythm-metrics"><div><strong id="streakDays">0</strong><span>连续学习天数</span></div><div><strong id="avgSpeed">0</strong><span>平均分钟 / 题</span></div><div><strong id="last7Compare">0%</strong><span>近 7 天正确率</span></div><button class="text-btn" id="copyYesterday" type="button">复制昨天记录 →</button></div></section>
 
       <section class="insights-panel panel" aria-label="直观统计面板">
         <div class="panel-heading"><div><span class="section-kicker">VISUAL INSIGHTS</span><h2>训练走势</h2></div><span class="required-note">根据已保存记录自动更新</span></div>
@@ -76,7 +74,7 @@
     </main>
     <div class="toast" id="toast" role="status"></div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase-config.js?v=13195fc"></script>
-    <script src="app.js?v=daily-breakdown-1"></script>
+    <script src="supabase-config.js?v=visual-2"></script>
+    <script src="app.js?v=visual-2"></script>
   </body>
 </html>

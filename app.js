@@ -1,5 +1,4 @@
 const STORAGE_KEY = 'daily-practice-records';
-const GOAL_KEY = 'daily-practice-goal';
 const config = window.SUPABASE_CONFIG || {};
 const supabaseClient = null;
 const form = document.querySelector('#dailyForm');
@@ -11,7 +10,6 @@ const syncStatus = document.querySelector('#syncStatus');
 let records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 let cloudReady = Boolean(supabaseClient);
 let calendarMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-let dailyGoal = Number(localStorage.getItem(GOAL_KEY) || 50);
 
 async function restRequest(path, options = {}) {
   if (!config.url || !config.anonKey) throw new Error('Supabase 配置缺失');
@@ -70,15 +68,10 @@ function renderStats() {
 
 function renderControlStats(total) {
   const current = today();
-  const todayTotal = records.filter((item) => item.date === current).reduce((sum, item) => sum + item.total, 0);
   const sevenDays = records.filter((item) => daysBetween(item.date, current) >= 0 && daysBetween(item.date, current) < 7);
   const sevenTotal = sevenDays.reduce((sum, item) => sum + item.total, 0);
   const sevenCorrect = sevenDays.reduce((sum, item) => sum + item.correct, 0);
   const avgSpeed = total ? records.reduce((sum, item) => sum + item.minutes, 0) / total : 0;
-  document.querySelector('#dailyGoal').value = dailyGoal;
-  document.querySelector('#todayProgress').textContent = `${todayTotal} / ${dailyGoal}`;
-  document.querySelector('#goalFill').style.width = `${Math.min(100, (todayTotal / dailyGoal) * 100)}%`;
-  document.querySelector('#goalText').textContent = todayTotal >= dailyGoal ? '今日目标已完成，保持节奏' : `还差 ${dailyGoal - todayTotal} 题完成今日目标`;
   document.querySelector('#streakDays').textContent = calculateStreak();
   document.querySelector('#avgSpeed').textContent = avgSpeed ? avgSpeed.toFixed(2) : '0';
   document.querySelector('#last7Compare').textContent = sevenTotal ? `${((sevenCorrect / sevenTotal) * 100).toFixed(1)}%` : '0%';
@@ -286,7 +279,6 @@ form.addEventListener('submit', async (event) => {
 });
 
 document.querySelector('#resetForm').addEventListener('click', resetForm);
-document.querySelector('#saveGoal').addEventListener('click', () => { dailyGoal = Math.max(1, number(document.querySelector('#dailyGoal').value)); localStorage.setItem(GOAL_KEY, dailyGoal); renderStats(); showToast('每日目标已更新'); });
 document.querySelector('#prevMonth').addEventListener('click', () => { calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1); renderCalendar(); });
 document.querySelector('#nextMonth').addEventListener('click', () => { calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1); renderCalendar(); });
 document.querySelector('#copyYesterday').addEventListener('click', () => {
