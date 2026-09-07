@@ -1,8 +1,6 @@
 const STORAGE_KEY = 'daily-practice-records';
 const config = window.SUPABASE_CONFIG || {};
-const supabaseClient = window.supabase && config.url && config.anonKey
-  ? window.supabase.createClient(config.url, config.anonKey)
-  : null;
+const supabaseClient = null;
 const form = document.querySelector('#dailyForm');
 const recordsEl = document.querySelector('#dailyRecords');
 const emptyEl = document.querySelector('#emptyDaily');
@@ -11,6 +9,23 @@ const authButton = document.querySelector('[data-action="auth"]');
 const syncStatus = document.querySelector('#syncStatus');
 let records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 let cloudReady = Boolean(supabaseClient);
+
+async function restRequest(path, options = {}) {
+  if (!config.url || !config.anonKey) throw new Error('Supabase 配置缺失');
+  const response = await fetch(`${config.url}/rest/v1/${path}`, {
+    ...options,
+    headers: {
+      apikey: config.anonKey,
+      Authorization: `Bearer ${config.anonKey}`,
+      'Content-Type': 'application/json',
+      Prefer: 'return=representation',
+      ...(options.headers || {})
+    }
+  });
+  const body = await response.text();
+  if (!response.ok) throw new Error(body || `Supabase ${response.status}`);
+  return body ? JSON.parse(body) : null;
+}
 
 const today = () => {
   const date = new Date();
@@ -124,29 +139,26 @@ function editRecord(id) {
 }
 
 async function cloudInsert(item) {
-  if (!supabaseClient) return;
-  const { data, error } = await supabaseClient.from('training_sessions').insert({ session_date: item.date, module: item.type, total: item.total, correct: item.correct, minutes: item.minutes, note: item.note || null }).select('id').single();
-  if (error) throw error;
-  return data;
+  const data = await restRequest('training_sessions', { method: 'POST', body: JSON.stringify({ session_date: item.date, module: item.type, total: item.total, correct: item.correct, minutes: item.minutes, note: item.note || null }) });
+  return data?.[0];
 }
 
 async function cloudUpdate(item) {
-  if (!supabaseClient || !item.id.startsWith('cloud-')) return;
+  if (!item.id.startsWith('cloud-')) return;
   const id = item.id.slice(6);
-  const { error } = await supabaseClient.from('training_sessions').update({ session_date: item.date, module: item.type, total: item.total, correct: item.correct, minutes: item.minutes, note: item.note || null }).eq('id', id);
-  if (error) throw error;
+  await restRequest(`training_sessions?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ session_date: item.date, module: item.type, total: item.total, correct: item.correct, minutes: item.minutes, note: item.note || null }) });
 }
 
 async function cloudDelete(item) {
-  if (!supabaseClient || !item.id.startsWith('cloud-')) return;
-  const { error } = await supabaseClient.from('training_sessions').delete().eq('id', item.id.slice(6));
-  if (error) throw error;
+  if (!item.id.startsWith('cloud-')) return;
+  await restRequest(`training_sessions?id=eq.${encodeURIComponent(item.id.slice(6))}`, { method: 'DELETE' });
 }
 
 async function loadCloudRecords() {
-  if (!supabaseClient) return;
-  const { data, error } = await supabaseClient.from('training_sessions').select('id,module,total,correct,minutes,session_date,note,created_at').order('session_date', { ascending: false });
-  if (error || !data) { cloudReady = false; syncStatus.textContent = '云端不可用，本机数据保留'; return; }
+  let data;
+  try { data = await restRequest('training_sessions?select=id,module,total,correct,minutes,session_date,note,created_at&order=session_date.desc'); }
+  catch (error) { cloudReady = false; syncStatus.textContent = `云端错误：${error.message.slice(0, 40)}`; return; }
+  if (!data) { cloudReady = false; syncStatus.textContent = '云端不可用，本机数据保留'; return; }
   cloudReady = true;
   const cloudRecords = data.map((item) => ({ id: `cloud-${item.id}`, date: item.session_date, type: item.module, minutes: item.minutes, total: item.total, correct: item.correct, wrong: item.total - item.correct, note: item.note || '' }));
   const localOnly = records.filter((local) => !cloudRecords.some((cloud) => cloud.date === local.date && cloud.type === local.type && cloud.total === local.total && cloud.correct === local.correct));
@@ -158,9 +170,9 @@ async function loadCloudRecords() {
 }
 
 async function syncLocalRecords() {
-  if (!supabaseClient) return;
-  const { data: cloudData, error } = await supabaseClient.from('training_sessions').select('id,module,total,correct,minutes,session_date,note');
-  if (error) return;
+  let cloudData;
+  try { cloudData = await restRequest('training_sessions?select=id,module,total,correct,minutes,session_date,note'); }
+  catch { return; }
   const cloudRecords = cloudData || [];
   const pending = records.filter((local) => !local.id.startsWith('cloud-') && !cloudRecords.some((remote) => remote.session_date === local.date && remote.module === local.type && remote.total === local.total && remote.correct === local.correct));
   for (const item of pending) {
@@ -217,7 +229,7 @@ recordsEl.addEventListener('click', (event) => {
 });
 
 async function syncCloud() {
-  if (!supabaseClient) return showToast('云端服务未配置，当前可正常本机使用');
+  if (!config.url || !config.anonKey) return showToast('云端服务未配置，当前可正常本机使用');
   syncStatus.textContent = '正在同步...';
   await syncLocalRecords();
   await loadCloudRecords();
