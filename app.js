@@ -105,6 +105,7 @@ function renderRecords() {
   const visible = filteredRecords();
   document.querySelector('#recordCount').textContent = `${visible.length} 条`;
   emptyEl.hidden = visible.length > 0;
+  renderDailyBreakdown(visible);
   recordsEl.innerHTML = visible.map((item) => {
     const accuracy = item.total ? ((item.correct / item.total) * 100).toFixed(1) : '0.0';
     return `<article class="record">
@@ -114,6 +115,19 @@ function renderRecords() {
       ${item.note ? `<p class="record-note">${escapeHtml(item.note)}</p>` : ''}
     </article>`;
   }).join('');
+}
+
+function renderDailyBreakdown(visible) {
+  const groups = visible.reduce((map, item) => {
+    const group = map[item.date] || { total: 0, correct: 0, types: {} };
+    group.total += item.total;
+    group.correct += item.correct;
+    group.types[item.type] = (group.types[item.type] || 0) + item.total;
+    map[item.date] = group;
+    return map;
+  }, {});
+  const breakdown = document.querySelector('#dailyBreakdown');
+  breakdown.innerHTML = Object.entries(groups).sort((a, b) => b[0].localeCompare(a[0])).map(([date, group]) => `<div class="day-summary"><div class="day-summary-head"><strong>${moneyDate(date)}</strong><span>完成 ${group.total} 题 · 正确 ${(group.correct / group.total * 100).toFixed(1)}%</span></div><div class="day-types">${Object.entries(group.types).map(([type, total]) => `<span class="day-type">${escapeHtml(type)} <b>${total} 题</b></span>`).join('')}</div></div>`).join('');
 }
 
 function escapeHtml(value) {
