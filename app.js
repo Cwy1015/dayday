@@ -223,6 +223,72 @@ document.querySelectorAll('[data-action="edit-profile"]').forEach((button) => bu
 }));
 renderProfile();
 
+const dailyForm = document.querySelector('#dailyForm');
+const dailyRecords = document.querySelector('#dailyRecords');
+const dailySummary = document.querySelector('#dailySummary');
+const emptyDaily = document.querySelector('#emptyDaily');
+const dailyCount = document.querySelector('#dailyCount');
+let dailyEntries = JSON.parse(localStorage.getItem('daily-practice-records') || '[]');
+
+function renderDailyEntries() {
+  dailyRecords.innerHTML = '';
+  dailyCount.textContent = `${dailyEntries.length} 条`;
+  emptyDaily.style.display = dailyEntries.length ? 'none' : 'block';
+  const total = dailyEntries.reduce((sum, item) => sum + Number(item.total), 0);
+  const correct = dailyEntries.reduce((sum, item) => sum + Number(item.correct), 0);
+  const minutes = dailyEntries.reduce((sum, item) => sum + Number(item.minutes), 0);
+  dailySummary.innerHTML = `<span><b>${total}</b>累计题数</span><span><b>${total ? ((correct / total) * 100).toFixed(1) : '0.0'}%</b>平均正确率</span><span><b>${minutes}</b>累计分钟</span>`;
+  if (dailyEntries.length) {
+    document.querySelector('#questionStat').innerHTML = `${total}<small> 题</small>`;
+    document.querySelector('#accuracyStat').innerHTML = `${((correct / total) * 100).toFixed(1)}<small>%</small>`;
+  }
+  dailyEntries.slice().sort((a, b) => `${b.date}${b.id}`.localeCompare(`${a.date}${a.id}`)).forEach((entry) => {
+    const item = document.createElement('article');
+    item.className = 'daily-entry';
+    item.innerHTML = `<div class="daily-entry-date"><b>${entry.date}</b><span>${entry.type}</span></div><div class="daily-entry-stats"><b>${entry.total}<small>题</small></b><b class="daily-correct">${entry.correct}<small>对</small></b><b class="daily-wrong">${entry.wrong}<small>错</small></b><span>${entry.minutes} 分钟${entry.startTime && entry.endTime ? ` · ${entry.startTime}-${entry.endTime}` : ''}</span></div>${entry.note ? '<p class="daily-note"></p>' : ''}<div class="entry-actions"><button class="entry-edit" data-daily-edit="${entry.id}">编辑</button><button class="entry-delete" data-daily-delete="${entry.id}">删除</button></div>`;
+    if (entry.note) item.querySelector('.daily-note').textContent = entry.note;
+    dailyRecords.appendChild(item);
+  });
+  dailyRecords.querySelectorAll('[data-daily-edit]').forEach((button) => button.addEventListener('click', () => {
+    const entry = dailyEntries.find((item) => String(item.id) === String(button.dataset.dailyEdit));
+    if (!entry) return;
+    Object.entries(entry).forEach(([key, value]) => { if (dailyForm.elements[key]) dailyForm.elements[key].value = value; });
+    document.querySelector('[data-view="daily"]').click();
+    dailyForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }));
+  dailyRecords.querySelectorAll('[data-daily-delete]').forEach((button) => button.addEventListener('click', () => {
+    if (!window.confirm('确定删除这条每日刷题记录吗？')) return;
+    dailyEntries = dailyEntries.filter((item) => String(item.id) !== String(button.dataset.dailyDelete));
+    localStorage.setItem('daily-practice-records', JSON.stringify(dailyEntries));
+    renderDailyEntries();
+    showToast('每日记录已删除');
+  }));
+}
+
+function updateDailyWrong() {
+  const total = Number(dailyForm.elements.total.value) || 0;
+  const correct = Math.min(total, Number(dailyForm.elements.correct.value) || 0);
+  dailyForm.elements.wrong.value = Math.max(0, total - correct);
+}
+['total', 'correct'].forEach((name) => dailyForm.elements[name].addEventListener('input', updateDailyWrong));
+dailyForm.elements.date.value = new Date().toISOString().slice(0, 10);
+dailyForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  const data = Object.fromEntries(new FormData(dailyForm));
+  const total = Math.max(1, Number(data.total));
+  const correct = Math.min(total, Math.max(0, Number(data.correct)));
+  const entry = { ...data, id: data.id || crypto.randomUUID(), total, correct, wrong: total - correct, minutes: Math.max(0, Number(data.minutes)) };
+  dailyEntries = dailyEntries.filter((item) => String(item.id) !== String(entry.id));
+  dailyEntries.push(entry);
+  localStorage.setItem('daily-practice-records', JSON.stringify(dailyEntries));
+  currentUser().then((user) => user && cloudRequest('training_sessions', { method: 'POST', body: JSON.stringify({ user_id: user.id, module: entry.type, total: entry.total, correct: entry.correct, minutes: entry.minutes, reason: '每日记录', session_date: entry.date, start_time: entry.startTime || null, end_time: entry.endTime || null, note: entry.note }) })).catch(() => {});
+  dailyForm.reset();
+  dailyForm.elements.date.value = new Date().toISOString().slice(0, 10);
+  renderDailyEntries();
+  showToast('每日刷题记录已保存');
+});
+renderDailyEntries();
+
 document.querySelectorAll('.mistake-item').forEach((item) => {
   const fields = [item.querySelector('.mistake-type'), item.querySelector('.mistake-copy b'), item.querySelector('.mistake-copy span')];
   fields.forEach((field) => { if (field) { field.contentEditable = 'true'; field.title = '点击修改'; field.addEventListener('blur', saveMistakes); } });
