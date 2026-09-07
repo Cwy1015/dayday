@@ -5,7 +5,7 @@ const form = document.querySelector('#dailyForm');
 const recordsEl = document.querySelector('#dailyRecords');
 const emptyEl = document.querySelector('#emptyDaily');
 const toast = document.querySelector('#toast');
-const authButton = document.querySelector('[data-action="auth"]');
+const authButton = document.querySelector('[data-action="sync"]');
 const syncStatus = document.querySelector('#syncStatus');
 let records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 let cloudReady = Boolean(supabaseClient);
