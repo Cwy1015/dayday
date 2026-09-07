@@ -55,11 +55,9 @@ function renderStats() {
   const total = records.reduce((sum, item) => sum + item.total, 0);
   const minutes = records.reduce((sum, item) => sum + item.minutes, 0);
   const correct = records.reduce((sum, item) => sum + item.correct, 0);
-  const days = new Set(records.map((item) => item.date)).size;
   document.querySelector('#totalQuestions').textContent = total;
   document.querySelector('#totalMinutes').textContent = minutes;
   document.querySelector('#averageAccuracy').textContent = total ? ((correct / total) * 100).toFixed(1) : '0';
-  document.querySelector('#recordDays').textContent = days;
   renderInsights(total, correct);
   renderControlStats(total);
   renderCalendar();
@@ -114,7 +112,7 @@ function renderDayDetail(date) {
 function renderAnalysis() {
   const typeMap = records.reduce((map, item) => { const row = map[item.type] || { total: 0, correct: 0, minutes: 0 }; row.total += item.total; row.correct += item.correct; row.minutes += item.minutes; map[item.type] = row; return map; }, {});
   const types = Object.entries(typeMap).map(([type, value]) => ({ type, ...value, accuracy: value.correct / value.total * 100, speed: value.minutes / value.total })).sort((a, b) => b.accuracy - a.accuracy);
-  document.querySelector('#typeAccuracy').innerHTML = types.length ? types.slice(0, 6).map((item) => `<div class="analysis-row"><span title="${escapeHtml(item.type)}">${escapeHtml(item.type)}</span><i class="analysis-track"><b style="width:${item.accuracy}%"></b></i><span>${item.accuracy.toFixed(1)}%<small>${item.speed.toFixed(2)} 分/题</small></span></div>`).join('') : '<span class="required-note">填写记录后显示题型正确率</span>';
+  document.querySelector('#typeAccuracy').innerHTML = types.length ? types.slice(0, 6).map((item) => `<button class="analysis-row" data-type-filter="${escapeHtml(item.type)}" type="button"><span title="${escapeHtml(item.type)}">${escapeHtml(item.type)}</span><i class="analysis-track"><b style="width:${item.accuracy}%"></b></i><span>${item.accuracy.toFixed(1)}%<small>${item.speed.toFixed(2)} 分/题</small></span></button>`).join('') : '<span class="required-note">填写记录后显示题型正确率</span>';
   const errorMap = records.reduce((map, item) => { String(item.errorType || '').split(/[、,，/]/).map((value) => value.trim()).filter(Boolean).forEach((type) => { map[type] = (map[type] || 0) + item.wrong; }); return map; }, {});
   const errors = Object.entries(errorMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
   const errorMax = Math.max(...errors.map((item) => item[1]), 1);
@@ -144,7 +142,7 @@ function renderInsights(total, correct) {
   const topTypes = Object.entries(typeTotals).sort((a, b) => b[1] - a[1]).slice(0, 4);
   const typeMax = Math.max(...topTypes.map((item) => item[1]), 1);
   document.querySelector('#typeBars').innerHTML = topTypes.length
-    ? topTypes.map(([type, value]) => `<div class="type-row"><span title="${escapeHtml(type)}">${escapeHtml(type)}</span><i class="type-track"><b style="width:${(value / typeMax) * 100}%"></b></i><span>${value}</span></div>`).join('')
+    ? topTypes.map(([type, value]) => `<button class="type-row" data-type-filter="${escapeHtml(type)}" type="button"><span title="${escapeHtml(type)}">${escapeHtml(type)}</span><i class="type-track"><b style="width:${(value / typeMax) * 100}%"></b></i><span>${value} 题</span></button>`).join('')
     : '<span class="required-note">填写记录后显示题型分布</span>';
   document.querySelector('#topType').textContent = topTypes[0] ? `最多：${topTypes[0][0]}` : '暂无数据';
 
@@ -313,6 +311,9 @@ document.querySelector('#copyYesterday').addEventListener('click', () => {
 });
 document.querySelector('#searchInput').addEventListener('input', renderRecords);
 document.querySelector('#dateFilter').addEventListener('input', renderRecords);
+document.querySelector('.insights-panel').addEventListener('click', (event) => { const button = event.target.closest('[data-type-filter]'); if (button) filterByType(button.dataset.typeFilter); });
+document.querySelector('.analysis-panel').addEventListener('click', (event) => { const button = event.target.closest('[data-type-filter]'); if (button) filterByType(button.dataset.typeFilter); });
+function filterByType(type) { document.querySelector('#searchInput').value = type; document.querySelector('#dateFilter').value = ''; renderRecords(); document.querySelector('#dailyRecords').scrollIntoView({ behavior: 'smooth', block: 'start' }); showToast(`正在查看：${type}`); }
 document.querySelector('#clearFilters').addEventListener('click', () => { document.querySelector('#searchInput').value = ''; document.querySelector('#dateFilter').value = ''; renderRecords(); });
 document.querySelector('#retrySync').addEventListener('click', syncCloud);
 document.querySelector('#quickAdd').addEventListener('click', () => { resetForm(); form.scrollIntoView({ behavior: 'smooth', block: 'start' }); form.elements.type.focus(); });
