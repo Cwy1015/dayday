@@ -120,13 +120,14 @@ function renderInsights(total, correct) {
     current.setDate(date.getDate() - (6 - index));
     const key = current.toISOString().slice(0, 10);
     const dayRecords = records.filter((item) => item.date === key);
-    return { key, label: `${current.getMonth() + 1}/${current.getDate()}`, total: dayRecords.reduce((sum, item) => sum + item.total, 0) };
+    return { key, label: `${current.getMonth() + 1}/${current.getDate()}`, total: dayRecords.reduce((sum, item) => sum + item.total, 0), minutes: dayRecords.reduce((sum, item) => sum + item.minutes, 0) };
   });
   const max = Math.max(...days.map((item) => item.total), 1);
   document.querySelector('#weeklyBars').innerHTML = days.map((item, index) => `<div class="weekly-bar ${index === 6 ? 'today' : ''}" style="height:${Math.max(4, (item.total / max) * 100)}%"><span>${item.total || ''}</span></div>`).join('');
   document.querySelector('#weeklyLabels').innerHTML = days.map((item) => `<span>${item.label}</span>`).join('');
   const weekTotal = days.reduce((sum, item) => sum + item.total, 0);
-  document.querySelector('#trendHint').textContent = weekTotal ? `${weekTotal} 题` : '暂无数据';
+  const weekMinutes = days.reduce((sum, item) => sum + item.minutes, 0);
+  document.querySelector('#trendHint').textContent = weekTotal ? `${weekTotal} 题 · ${weekMinutes} 分钟` : '暂无数据';
 
   const typeTotals = records.reduce((map, item) => { map[item.type] = (map[item.type] || 0) + item.total; return map; }, {});
   const topTypes = Object.entries(typeTotals).sort((a, b) => b[1] - a[1]).slice(0, 4);
@@ -171,15 +172,18 @@ function renderRecords() {
 
 function renderDailyBreakdown(visible) {
   const groups = visible.reduce((map, item) => {
-    const group = map[item.date] || { total: 0, correct: 0, types: {} };
+    const group = map[item.date] || { total: 0, minutes: 0, correct: 0, types: {} };
     group.total += item.total;
+    group.minutes += item.minutes;
     group.correct += item.correct;
-    group.types[item.type] = (group.types[item.type] || 0) + item.total;
+    group.types[item.type] = group.types[item.type] || { total: 0, minutes: 0 };
+    group.types[item.type].total += item.total;
+    group.types[item.type].minutes += item.minutes;
     map[item.date] = group;
     return map;
   }, {});
   const breakdown = document.querySelector('#dailyBreakdown');
-  breakdown.innerHTML = Object.entries(groups).sort((a, b) => b[0].localeCompare(a[0])).map(([date, group]) => `<div class="day-summary"><div class="day-summary-head"><strong>${moneyDate(date)}</strong><span>完成 ${group.total} 题 · 正确 ${(group.correct / group.total * 100).toFixed(1)}%</span></div><div class="day-types">${Object.entries(group.types).map(([type, total]) => `<span class="day-type">${escapeHtml(type)} <b>${total} 题</b></span>`).join('')}</div></div>`).join('');
+  breakdown.innerHTML = Object.entries(groups).sort((a, b) => b[0].localeCompare(a[0])).map(([date, group]) => `<div class="day-summary"><div class="day-summary-head"><strong>${moneyDate(date)}</strong><span>完成 ${group.total} 题 · 用时 ${group.minutes} 分钟 · 正确 ${(group.correct / group.total * 100).toFixed(1)}%</span></div><div class="day-types">${Object.entries(group.types).map(([type, value]) => `<span class="day-type">${escapeHtml(type)} <b>${value.total} 题 · ${value.minutes} 分钟</b></span>`).join('')}</div></div>`).join('');
 }
 
 function escapeHtml(value) {
