@@ -77,11 +77,16 @@ if (savedPlan) tasks.forEach((task, index) => { task.checked = Boolean(savedPlan
 tasks.forEach((task) => task.addEventListener('change', () => { updatePlan(); showToast('计划进度已更新'); }));
 updatePlan();
 
-navItems.forEach((item) => item.addEventListener('click', () => {
+function switchView(item) {
   const view = item.dataset.view;
   navItems.forEach((nav) => nav.classList.toggle('active', nav === item));
   views.forEach((panel) => panel.classList.toggle('visible', panel.id === `${view}View`));
-}));
+}
+navItems.forEach((item) => item.addEventListener('click', () => switchView(item)));
+document.addEventListener('click', (event) => {
+  const item = event.target.closest?.('.nav-item');
+  if (item) switchView(item);
+});
 
 document.querySelectorAll('[data-action="view-mistakes"]').forEach((button) => button.addEventListener('click', () => document.querySelector('[data-view="mistakes"]').click()));
 document.querySelectorAll('[data-action="start-focus"]').forEach((button) => button.addEventListener('click', () => document.querySelector('[data-view="practice"]').click()));
