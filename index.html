@@ -34,16 +34,16 @@
       <section class="rhythm-panel panel"><div><span class="section-kicker">STUDY RHYTHM</span><h2>学习节奏</h2></div><div class="rhythm-metrics"><div><strong id="streakDays">0</strong><span>连续学习天数</span></div><div><strong id="avgSpeed">0</strong><span>平均分钟 / 题</span></div><div><strong id="last7Compare">0%</strong><span>近 7 天正确率</span></div><button class="text-btn" id="copyYesterday" type="button">复制昨天记录 →</button></div></section>
 
       <section class="insights-panel panel" aria-label="直观统计面板">
-        <div class="panel-heading"><div><span class="section-kicker">VISUAL INSIGHTS</span><h2>训练走势</h2></div><span class="required-note">根据已保存记录自动更新</span></div>
+        <div class="panel-heading"><div><span class="section-kicker">VISUAL INSIGHTS</span><h2>训练走势</h2></div><div class="range-switch"><button id="range7" class="selected" type="button">近 7 天</button><button id="range30" type="button">近 30 天</button></div></div>
         <div class="insights-grid">
-          <div class="trend-card"><div class="insight-title"><b>近 7 天刷题量</b><span id="trendHint">暂无数据</span></div><div id="weeklyBars" class="weekly-bars"></div><div id="weeklyLabels" class="weekly-labels"></div></div>
+          <div class="trend-card"><div class="insight-title"><b id="trendTitle">近 7 天刷题量</b><span id="trendHint">暂无数据</span></div><div id="weeklyBars" class="weekly-bars"></div><div id="weeklyLabels" class="weekly-labels"></div></div>
           <div class="insight-card"><div class="insight-title"><b>题型分布</b><span id="topType">暂无数据</span></div><div id="typeBars" class="type-bars"></div></div>
           <div class="insight-card"><div class="insight-title"><b>正确率表现</b><span id="accuracyHint">暂无数据</span></div><div class="accuracy-meter"><div><span>累计正确率</span><strong id="panelAccuracy">0%</strong></div><i><b id="accuracyFill"></b></i><small id="accuracyText">记录后会显示表现</small></div></div>
         </div>
       </section>
 
       <section class="tracking-grid">
-        <section class="calendar-panel panel"><div class="panel-heading"><div><span class="section-kicker">STUDY CALENDAR</span><h2>学习日历</h2></div><div class="calendar-nav"><button id="prevMonth" type="button">‹</button><strong id="calendarTitle">--</strong><button id="nextMonth" type="button">›</button></div></div><div class="calendar-week"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div><div id="calendarGrid" class="calendar-grid"></div><p class="calendar-tip">颜色越深，代表当天刷题量越多</p></section>
+        <section class="calendar-panel panel"><div class="panel-heading"><div><span class="section-kicker">STUDY CALENDAR</span><h2>学习日历</h2></div><div class="calendar-nav"><button id="prevMonth" type="button">‹</button><strong id="calendarTitle">--</strong><button id="nextMonth" type="button">›</button></div></div><div class="calendar-week"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div><div id="calendarGrid" class="calendar-grid"></div><div id="dayDetail" class="day-detail"><span>点击有记录的日期查看当天详情</span></div><p class="calendar-tip">颜色越深，代表当天刷题量越多</p></section>
         <section class="analysis-panel panel"><div class="panel-heading"><div><span class="section-kicker">ABILITY REVIEW</span><h2>题型表现</h2></div><span class="required-note">按正确率排序</span></div><div id="typeAccuracy" class="analysis-list"></div><div class="error-heading"><span>错误类型</span><span id="errorTotal">0 次</span></div><div id="errorBars" class="error-bars"></div></section>
       </section>
 
@@ -70,11 +70,12 @@
           <div id="emptyDaily" class="empty-state"><div class="empty-icon">✦</div><h3>还没有刷题记录</h3><p>从左侧填入今天完成的训练，第一条记录会出现在这里。</p></div>
         </section>
       </section>
-      <footer><span>数据由你掌控 · 每一条记录都属于你</span><span id="syncStatus">本机保存</span></footer>
+      <footer><span>数据由你掌控 · 每一条记录都属于你</span><span class="sync-footer"><span id="syncStatus">本机保存</span><button id="retrySync" type="button">重新同步</button></span></footer>
     </main>
+    <button id="quickAdd" class="quick-add" type="button">+ 新增记录</button>
     <div class="toast" id="toast" role="status"></div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=visual-2"></script>
-    <script src="app.js?v=time-stat-1"></script>
+    <script src="app.js?v=complete-1"></script>
   </body>
 </html>

@@ -10,6 +10,7 @@ const syncStatus = document.querySelector('#syncStatus');
 let records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 let cloudReady = Boolean(supabaseClient);
 let calendarMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+let trendRange = 7;
 
 async function restRequest(path, options = {}) {
   if (!config.url || !config.anonKey) throw new Error('Supabase 配置缺失');
@@ -99,14 +100,23 @@ function renderCalendar() {
   const max = Math.max(...Object.values(totals), 1);
   const firstDay = new Date(year, month, 1).getDay();
   const days = new Date(year, month + 1, 0).getDate();
-  document.querySelector('#calendarGrid').innerHTML = `${'<span class="calendar-cell empty"></span>'.repeat(firstDay)}${Array.from({ length: days }, (_, index) => { const day = index + 1; const key = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`; const value = totals[key] || 0; const level = value >= max * .75 ? 3 : value >= max * .4 ? 2 : value ? 1 : 0; return `<span class="calendar-cell ${value ? `has-data level-${level}` : ''} ${key === today() ? 'today' : ''}" title="${value ? `${value} 题` : '未记录'}">${day}</span>`; }).join('')}`;
+  document.querySelector('#calendarGrid').innerHTML = `${'<span class="calendar-cell empty"></span>'.repeat(firstDay)}${Array.from({ length: days }, (_, index) => { const day = index + 1; const key = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`; const value = totals[key] || 0; const level = value >= max * .75 ? 3 : value >= max * .4 ? 2 : value ? 1 : 0; return `<button class="calendar-cell ${value ? `has-data level-${level}` : ''} ${key === today() ? 'today' : ''}" data-date="${key}" type="button" title="${value ? `${value} 题` : '未记录'}">${day}</button>`; }).join('')}`;
+}
+
+function renderDayDetail(date) {
+  const dayRecords = records.filter((item) => item.date === date);
+  const detail = document.querySelector('#dayDetail');
+  if (!dayRecords.length) { detail.innerHTML = '<span>这一天还没有刷题记录</span>'; return; }
+  const total = dayRecords.reduce((sum, item) => sum + item.total, 0);
+  const minutes = dayRecords.reduce((sum, item) => sum + item.minutes, 0);
+  detail.innerHTML = `<strong>${moneyDate(date)}</strong><span>${dayRecords.length} 组 · ${total} 题 · ${minutes} 分钟</span><button type="button" data-day-filter="${date}">查看当天记录 →</button>`;
 }
 
 function renderAnalysis() {
-  const typeMap = records.reduce((map, item) => { const row = map[item.type] || { total: 0, correct: 0 }; row.total += item.total; row.correct += item.correct; map[item.type] = row; return map; }, {});
-  const types = Object.entries(typeMap).map(([type, value]) => ({ type, ...value, accuracy: value.correct / value.total * 100 })).sort((a, b) => b.accuracy - a.accuracy);
-  document.querySelector('#typeAccuracy').innerHTML = types.length ? types.slice(0, 6).map((item) => `<div class="analysis-row"><span title="${escapeHtml(item.type)}">${escapeHtml(item.type)}</span><i class="analysis-track"><b style="width:${item.accuracy}%"></b></i><span>${item.accuracy.toFixed(1)}%</span></div>`).join('') : '<span class="required-note">填写记录后显示题型正确率</span>';
-  const errorMap = records.reduce((map, item) => { if (item.errorType) map[item.errorType] = (map[item.errorType] || 0) + item.wrong; return map; }, {});
+  const typeMap = records.reduce((map, item) => { const row = map[item.type] || { total: 0, correct: 0, minutes: 0 }; row.total += item.total; row.correct += item.correct; row.minutes += item.minutes; map[item.type] = row; return map; }, {});
+  const types = Object.entries(typeMap).map(([type, value]) => ({ type, ...value, accuracy: value.correct / value.total * 100, speed: value.minutes / value.total })).sort((a, b) => b.accuracy - a.accuracy);
+  document.querySelector('#typeAccuracy').innerHTML = types.length ? types.slice(0, 6).map((item) => `<div class="analysis-row"><span title="${escapeHtml(item.type)}">${escapeHtml(item.type)}</span><i class="analysis-track"><b style="width:${item.accuracy}%"></b></i><span>${item.accuracy.toFixed(1)}%<small>${item.speed.toFixed(2)} 分/题</small></span></div>`).join('') : '<span class="required-note">填写记录后显示题型正确率</span>';
+  const errorMap = records.reduce((map, item) => { String(item.errorType || '').split(/[、,，/]/).map((value) => value.trim()).filter(Boolean).forEach((type) => { map[type] = (map[type] || 0) + item.wrong; }); return map; }, {});
   const errors = Object.entries(errorMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
   const errorMax = Math.max(...errors.map((item) => item[1]), 1);
   document.querySelector('#errorTotal').textContent = `${errors.reduce((sum, item) => sum + item[1], 0)} 次`;
@@ -115,15 +125,16 @@ function renderAnalysis() {
 
 function renderInsights(total, correct) {
   const date = new Date();
-  const days = Array.from({ length: 7 }, (_, index) => {
+  const days = Array.from({ length: trendRange }, (_, index) => {
     const current = new Date(date);
-    current.setDate(date.getDate() - (6 - index));
+    current.setDate(date.getDate() - (trendRange - 1 - index));
     const key = current.toISOString().slice(0, 10);
     const dayRecords = records.filter((item) => item.date === key);
     return { key, label: `${current.getMonth() + 1}/${current.getDate()}`, total: dayRecords.reduce((sum, item) => sum + item.total, 0), minutes: dayRecords.reduce((sum, item) => sum + item.minutes, 0) };
   });
   const max = Math.max(...days.map((item) => item.total), 1);
-  document.querySelector('#weeklyBars').innerHTML = days.map((item, index) => `<div class="weekly-bar ${index === 6 ? 'today' : ''}" style="height:${Math.max(4, (item.total / max) * 100)}%"><span>${item.total || ''}</span></div>`).join('');
+  document.querySelector('#trendTitle').textContent = `近 ${trendRange} 天刷题量`;
+  document.querySelector('#weeklyBars').innerHTML = days.map((item, index) => `<div class="weekly-bar ${index === days.length - 1 ? 'today' : ''}" style="height:${Math.max(4, (item.total / max) * 100)}%"><span>${item.total || ''}</span></div>`).join('');
   document.querySelector('#weeklyLabels').innerHTML = days.map((item) => `<span>${item.label}</span>`).join('');
   const weekTotal = days.reduce((sum, item) => sum + item.total, 0);
   const weekMinutes = days.reduce((sum, item) => sum + item.minutes, 0);
@@ -283,8 +294,12 @@ form.addEventListener('submit', async (event) => {
 });
 
 document.querySelector('#resetForm').addEventListener('click', resetForm);
+document.querySelector('#range7').addEventListener('click', () => { trendRange = 7; document.querySelector('#range7').classList.add('selected'); document.querySelector('#range30').classList.remove('selected'); renderStats(); });
+document.querySelector('#range30').addEventListener('click', () => { trendRange = 30; document.querySelector('#range30').classList.add('selected'); document.querySelector('#range7').classList.remove('selected'); renderStats(); });
 document.querySelector('#prevMonth').addEventListener('click', () => { calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1); renderCalendar(); });
 document.querySelector('#nextMonth').addEventListener('click', () => { calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1); renderCalendar(); });
+document.querySelector('#calendarGrid').addEventListener('click', (event) => { const cell = event.target.closest('[data-date]'); if (cell) renderDayDetail(cell.dataset.date); });
+document.querySelector('#dayDetail').addEventListener('click', (event) => { const button = event.target.closest('[data-day-filter]'); if (!button) return; document.querySelector('#dateFilter').value = button.dataset.dayFilter; renderRecords(); document.querySelector('#dailyRecords').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
 document.querySelector('#copyYesterday').addEventListener('click', () => {
   const yesterday = new Date(new Date(`${today()}T00:00:00`) - 86400000).toISOString().slice(0, 10);
   const latest = records.filter((item) => item.date === yesterday).sort((a, b) => b.id.localeCompare(a.id))[0];
@@ -301,6 +316,8 @@ document.querySelector('#copyYesterday').addEventListener('click', () => {
 document.querySelector('#searchInput').addEventListener('input', renderRecords);
 document.querySelector('#dateFilter').addEventListener('input', renderRecords);
 document.querySelector('#clearFilters').addEventListener('click', () => { document.querySelector('#searchInput').value = ''; document.querySelector('#dateFilter').value = ''; renderRecords(); });
+document.querySelector('#retrySync').addEventListener('click', syncCloud);
+document.querySelector('#quickAdd').addEventListener('click', () => { resetForm(); form.scrollIntoView({ behavior: 'smooth', block: 'start' }); form.elements.type.focus(); });
 recordsEl.addEventListener('click', (event) => {
   const edit = event.target.closest('[data-edit]');
   const remove = event.target.closest('[data-delete]');
