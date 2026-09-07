@@ -51,12 +51,15 @@ alter table public.question_book_records enable row level security;
 
 drop policy if exists "users manage own training sessions" on public.training_sessions;
 drop policy if exists "public manages training sessions" on public.training_sessions;
+drop policy if exists "shared path manages training sessions" on public.training_sessions;
 drop policy if exists "users manage own study tasks" on public.study_tasks;
 drop policy if exists "users manage own question book records" on public.question_book_records;
 
 -- 个人使用模式：不要求登录，手机和平板共享同一份训练记录。
-create policy "public manages training sessions" on public.training_sessions
-  for all to anon, authenticated using (true) with check (true);
+create policy "shared path manages training sessions" on public.training_sessions
+  for all to anon, authenticated
+  using (coalesce(current_setting('request.headers', true), '{}')::jsonb ->> 'x-cc-access' = 'ccday-7m4k2p')
+  with check (coalesce(current_setting('request.headers', true), '{}')::jsonb ->> 'x-cc-access' = 'ccday-7m4k2p');
 create policy "users manage own study tasks" on public.study_tasks
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "users manage own question book records" on public.question_book_records

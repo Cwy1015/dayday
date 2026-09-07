@@ -22,6 +22,7 @@ async function restRequest(path, options = {}) {
     headers: {
       apikey: config.anonKey,
       Authorization: `Bearer ${config.anonKey}`,
+      'x-cc-access': accessValue,
       'Content-Type': 'application/json',
       Prefer: 'return=representation',
       ...(options.headers || {})
