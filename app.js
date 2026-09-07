@@ -146,10 +146,11 @@ async function cloudDelete(item) {
 async function loadCloudRecords() {
   if (!supabaseClient) return;
   const { data, error } = await supabaseClient.from('training_sessions').select('id,module,total,correct,minutes,session_date,note,created_at').order('session_date', { ascending: false });
-  if (error || !data) { cloudReady = false; return; }
+  if (error || !data) { cloudReady = false; syncStatus.textContent = '云端不可用，本机数据保留'; return; }
   cloudReady = true;
   const cloudRecords = data.map((item) => ({ id: `cloud-${item.id}`, date: item.session_date, type: item.module, minutes: item.minutes, total: item.total, correct: item.correct, wrong: item.total - item.correct, note: item.note || '' }));
   const localOnly = records.filter((local) => !cloudRecords.some((cloud) => cloud.date === local.date && cloud.type === local.type && cloud.total === local.total && cloud.correct === local.correct));
+  // Never replace local data with an empty or incomplete cloud response.
   records = [...cloudRecords, ...localOnly];
   saveLocal();
   renderStats();
