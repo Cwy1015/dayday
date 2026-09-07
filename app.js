@@ -245,7 +245,7 @@ function renderDailyEntries() {
   dailyEntries.slice().sort((a, b) => `${b.date}${b.id}`.localeCompare(`${a.date}${a.id}`)).forEach((entry) => {
     const item = document.createElement('article');
     item.className = 'daily-entry';
-    item.innerHTML = `<div class="daily-entry-date"><b>${entry.date}</b><span>${entry.type}</span></div><div class="daily-entry-stats"><b>${entry.total}<small>题</small></b><b class="daily-correct">${entry.correct}<small>对</small></b><b class="daily-wrong">${entry.wrong}<small>错</small></b><span>${entry.minutes} 分钟${entry.startTime && entry.endTime ? ` · ${entry.startTime}-${entry.endTime}` : ''}</span></div>${entry.note ? '<p class="daily-note"></p>' : ''}<div class="entry-actions"><button class="entry-edit" data-daily-edit="${entry.id}">编辑</button><button class="entry-delete" data-daily-delete="${entry.id}">删除</button></div>`;
+    item.innerHTML = `<div class="daily-entry-date"><b>${entry.date}</b><span>${entry.type}</span></div><div class="daily-entry-stats"><b>${entry.total}<small>题</small></b><b class="daily-correct">${entry.correct}<small>对</small></b><b class="daily-wrong">${entry.wrong}<small>错</small></b><span>${entry.minutes} 分钟</span></div>${entry.note ? '<p class="daily-note"></p>' : ''}<div class="entry-actions"><button class="entry-edit" data-daily-edit="${entry.id}">编辑</button><button class="entry-delete" data-daily-delete="${entry.id}">删除</button></div>`;
     if (entry.note) item.querySelector('.daily-note').textContent = entry.note;
     dailyRecords.appendChild(item);
   });
@@ -281,7 +281,7 @@ dailyForm.addEventListener('submit', (event) => {
   dailyEntries = dailyEntries.filter((item) => String(item.id) !== String(entry.id));
   dailyEntries.push(entry);
   localStorage.setItem('daily-practice-records', JSON.stringify(dailyEntries));
-  currentUser().then((user) => user && cloudRequest('training_sessions', { method: 'POST', body: JSON.stringify({ user_id: user.id, module: entry.type, total: entry.total, correct: entry.correct, minutes: entry.minutes, reason: '每日记录', session_date: entry.date, start_time: entry.startTime || null, end_time: entry.endTime || null, note: entry.note }) })).catch(() => {});
+  currentUser().then((user) => user && cloudRequest('training_sessions', { method: 'POST', body: JSON.stringify({ user_id: user.id, module: entry.type, total: entry.total, correct: entry.correct, minutes: entry.minutes, reason: '每日记录', session_date: entry.date, note: entry.note }) })).catch(() => {});
   dailyForm.reset();
   dailyForm.elements.date.value = new Date().toISOString().slice(0, 10);
   renderDailyEntries();
