@@ -30,6 +30,15 @@
         <article class="stat-card accent"><span>记录天数</span><strong id="recordDays">0</strong><small>天</small></article>
       </section>
 
+      <section class="insights-panel panel" aria-label="直观统计面板">
+        <div class="panel-heading"><div><span class="section-kicker">VISUAL INSIGHTS</span><h2>训练走势</h2></div><span class="required-note">根据已保存记录自动更新</span></div>
+        <div class="insights-grid">
+          <div class="trend-card"><div class="insight-title"><b>近 7 天刷题量</b><span id="trendHint">暂无数据</span></div><div id="weeklyBars" class="weekly-bars"></div><div id="weeklyLabels" class="weekly-labels"></div></div>
+          <div class="insight-card"><div class="insight-title"><b>题型分布</b><span id="topType">暂无数据</span></div><div id="typeBars" class="type-bars"></div></div>
+          <div class="insight-card"><div class="insight-title"><b>正确率表现</b><span id="accuracyHint">暂无数据</span></div><div class="accuracy-meter"><div><span>累计正确率</span><strong id="panelAccuracy">0%</strong></div><i><b id="accuracyFill"></b></i><small id="accuracyText">记录后会显示表现</small></div></div>
+        </div>
+      </section>
+
       <section class="workspace">
         <section class="panel form-panel">
           <div class="panel-heading"><div><span class="section-kicker">ADD A LOG</span><h2 id="formTitle">记录今天</h2></div><span class="required-note">所有数据可修改</span></div>

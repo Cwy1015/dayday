@@ -44,6 +44,37 @@ function renderStats() {
   document.querySelector('#totalMinutes').textContent = minutes;
   document.querySelector('#averageAccuracy').textContent = total ? ((correct / total) * 100).toFixed(1) : '0';
   document.querySelector('#recordDays').textContent = days;
+  renderInsights(total, correct);
+}
+
+function renderInsights(total, correct) {
+  const date = new Date();
+  const days = Array.from({ length: 7 }, (_, index) => {
+    const current = new Date(date);
+    current.setDate(date.getDate() - (6 - index));
+    const key = current.toISOString().slice(0, 10);
+    const dayRecords = records.filter((item) => item.date === key);
+    return { key, label: `${current.getMonth() + 1}/${current.getDate()}`, total: dayRecords.reduce((sum, item) => sum + item.total, 0) };
+  });
+  const max = Math.max(...days.map((item) => item.total), 1);
+  document.querySelector('#weeklyBars').innerHTML = days.map((item, index) => `<div class="weekly-bar ${index === 6 ? 'today' : ''}" style="height:${Math.max(4, (item.total / max) * 100)}%"><span>${item.total || ''}</span></div>`).join('');
+  document.querySelector('#weeklyLabels').innerHTML = days.map((item) => `<span>${item.label}</span>`).join('');
+  const weekTotal = days.reduce((sum, item) => sum + item.total, 0);
+  document.querySelector('#trendHint').textContent = weekTotal ? `${weekTotal} 题` : '暂无数据';
+
+  const typeTotals = records.reduce((map, item) => { map[item.type] = (map[item.type] || 0) + item.total; return map; }, {});
+  const topTypes = Object.entries(typeTotals).sort((a, b) => b[1] - a[1]).slice(0, 4);
+  const typeMax = Math.max(...topTypes.map((item) => item[1]), 1);
+  document.querySelector('#typeBars').innerHTML = topTypes.length
+    ? topTypes.map(([type, value]) => `<div class="type-row"><span title="${escapeHtml(type)}">${escapeHtml(type)}</span><i class="type-track"><b style="width:${(value / typeMax) * 100}%"></b></i><span>${value}</span></div>`).join('')
+    : '<span class="required-note">填写记录后显示题型分布</span>';
+  document.querySelector('#topType').textContent = topTypes[0] ? `最多：${topTypes[0][0]}` : '暂无数据';
+
+  const accuracy = total ? (correct / total) * 100 : 0;
+  document.querySelector('#panelAccuracy').textContent = `${accuracy.toFixed(1)}%`;
+  document.querySelector('#accuracyFill').style.width = `${accuracy}%`;
+  document.querySelector('#accuracyHint').textContent = total ? (accuracy >= 80 ? '状态不错' : accuracy >= 60 ? '继续保持' : '重点复盘') : '暂无数据';
+  document.querySelector('#accuracyText').textContent = total ? `共完成 ${total} 题，答对 ${correct} 题` : '记录后会显示表现';
 }
 
 function filteredRecords() {
