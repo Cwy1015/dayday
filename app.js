@@ -134,6 +134,7 @@ function renderInsights(total, correct) {
   });
   const max = Math.max(...days.map((item) => item.total), 1);
   document.querySelector('#trendTitle').textContent = `近 ${trendRange} 天刷题量`;
+  document.querySelector('.insights-grid').className = `insights-grid range-${trendRange}`;
   document.querySelector('#weeklyBars').className = `weekly-bars range-${trendRange}`;
   document.querySelector('#weeklyLabels').className = `weekly-labels range-${trendRange}`;
   document.querySelector('#weeklyBars').innerHTML = days.map((item, index) => `<div class="weekly-bar ${index === days.length - 1 ? 'today' : ''}" style="height:${Math.max(4, (item.total / max) * 100)}%"><span>${item.total || ''}</span></div>`).join('');
