@@ -1,0 +1,9 @@
+{
+  "name": "备考局 · 每日刷题记录",
+  "short_name": "备考局",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f5f1e9",
+  "theme_color": "#202522",
+  "lang": "zh-CN"
+}

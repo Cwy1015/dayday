@@ -6,6 +6,7 @@
     <meta name="theme-color" content="#f5f1e9" />
     <title>备考局 · 每日刷题记录</title>
     <meta name="deployment-version" content="2026-09-07-daily-log-single-page" />
+    <link rel="manifest" href="manifest.json" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@500;600;700;800&family=Noto+Serif+SC:wght@600;700;900&display=swap" rel="stylesheet" />
@@ -30,6 +31,10 @@
         <article class="stat-card accent"><span>记录天数</span><strong id="recordDays">0</strong><small>天</small></article>
       </section>
 
+      <section class="control-panel panel">
+        <div class="goal-block"><div class="panel-heading"><div><span class="section-kicker">TODAY'S TARGET</span><h2>今日目标</h2></div><button class="text-btn" id="copyYesterday" type="button">复制昨天</button></div><div class="goal-line"><strong id="todayProgress">0 / 50</strong><span>题</span><input id="dailyGoal" type="number" min="1" step="1" value="50" aria-label="每日目标题数" /><button id="saveGoal" type="button">设定</button></div><div class="goal-track"><b id="goalFill"></b></div><small id="goalText">完成目标后再收尾</small></div><div class="rhythm-block"><span class="section-kicker">STUDY RHYTHM</span><div class="rhythm-metrics"><div><strong id="streakDays">0</strong><span>连续学习</span></div><div><strong id="avgSpeed">0</strong><span>分钟 / 题</span></div><div><strong id="last7Compare">0%</strong><span>近 7 天正确率</span></div></div></div>
+      </section>
+
       <section class="insights-panel panel" aria-label="直观统计面板">
         <div class="panel-heading"><div><span class="section-kicker">VISUAL INSIGHTS</span><h2>训练走势</h2></div><span class="required-note">根据已保存记录自动更新</span></div>
         <div class="insights-grid">
@@ -37,6 +42,11 @@
           <div class="insight-card"><div class="insight-title"><b>题型分布</b><span id="topType">暂无数据</span></div><div id="typeBars" class="type-bars"></div></div>
           <div class="insight-card"><div class="insight-title"><b>正确率表现</b><span id="accuracyHint">暂无数据</span></div><div class="accuracy-meter"><div><span>累计正确率</span><strong id="panelAccuracy">0%</strong></div><i><b id="accuracyFill"></b></i><small id="accuracyText">记录后会显示表现</small></div></div>
         </div>
+      </section>
+
+      <section class="tracking-grid">
+        <section class="calendar-panel panel"><div class="panel-heading"><div><span class="section-kicker">STUDY CALENDAR</span><h2>学习日历</h2></div><div class="calendar-nav"><button id="prevMonth" type="button">‹</button><strong id="calendarTitle">--</strong><button id="nextMonth" type="button">›</button></div></div><div class="calendar-week"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div><div id="calendarGrid" class="calendar-grid"></div><p class="calendar-tip">颜色越深，代表当天刷题量越多</p></section>
+        <section class="analysis-panel panel"><div class="panel-heading"><div><span class="section-kicker">ABILITY REVIEW</span><h2>题型表现</h2></div><span class="required-note">按正确率排序</span></div><div id="typeAccuracy" class="analysis-list"></div><div class="error-heading"><span>错误类型</span><span id="errorTotal">0 次</span></div><div id="errorBars" class="error-bars"></div></section>
       </section>
 
       <section class="workspace">
@@ -47,6 +57,7 @@
             <div class="form-row"><label>日期<input name="date" type="date" required /></label><label>刷题类型<input name="type" placeholder="例如：资料分析专项" required /></label></div>
             <div class="form-row"><label>总用时（分钟）<input name="minutes" type="number" min="0" step="1" placeholder="例如：45" required /></label><label>总题数<input name="total" type="number" min="1" step="1" placeholder="例如：30" required /></label></div>
             <div class="form-row"><label>正确数量<input name="correct" type="number" min="0" step="1" placeholder="例如：24" required /></label><label>错误数量<input name="wrong" type="number" readonly placeholder="自动计算" /></label></div>
+            <label>主要错误类型<input name="errorType" placeholder="例如：知识盲区、审题失误、粗心、时间不足" /></label>
             <label>备注 / 错题内容<textarea name="note" rows="5" placeholder="记录今天的状态、错题原因、明天要复习的知识点"></textarea></label>
             <div class="form-actions"><button class="save-btn" type="submit">保存记录</button><button class="text-btn" id="resetForm" type="button">清空</button></div>
           </form>

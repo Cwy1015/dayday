@@ -1,4 +1,5 @@
 const STORAGE_KEY = 'daily-practice-records';
+const GOAL_KEY = 'daily-practice-goal';
 const config = window.SUPABASE_CONFIG || {};
 const supabaseClient = null;
 const form = document.querySelector('#dailyForm');
@@ -9,6 +10,8 @@ const authButton = document.querySelector('[data-action="sync"]');
 const syncStatus = document.querySelector('#syncStatus');
 let records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 let cloudReady = Boolean(supabaseClient);
+let calendarMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+let dailyGoal = Number(localStorage.getItem(GOAL_KEY) || 50);
 
 async function restRequest(path, options = {}) {
   if (!config.url || !config.anonKey) throw new Error('Supabase 配置缺失');
@@ -60,6 +63,61 @@ function renderStats() {
   document.querySelector('#averageAccuracy').textContent = total ? ((correct / total) * 100).toFixed(1) : '0';
   document.querySelector('#recordDays').textContent = days;
   renderInsights(total, correct);
+  renderControlStats(total);
+  renderCalendar();
+  renderAnalysis();
+}
+
+function renderControlStats(total) {
+  const current = today();
+  const todayTotal = records.filter((item) => item.date === current).reduce((sum, item) => sum + item.total, 0);
+  const sevenDays = records.filter((item) => daysBetween(item.date, current) >= 0 && daysBetween(item.date, current) < 7);
+  const sevenTotal = sevenDays.reduce((sum, item) => sum + item.total, 0);
+  const sevenCorrect = sevenDays.reduce((sum, item) => sum + item.correct, 0);
+  const avgSpeed = total ? records.reduce((sum, item) => sum + item.minutes, 0) / total : 0;
+  document.querySelector('#dailyGoal').value = dailyGoal;
+  document.querySelector('#todayProgress').textContent = `${todayTotal} / ${dailyGoal}`;
+  document.querySelector('#goalFill').style.width = `${Math.min(100, (todayTotal / dailyGoal) * 100)}%`;
+  document.querySelector('#goalText').textContent = todayTotal >= dailyGoal ? '今日目标已完成，保持节奏' : `还差 ${dailyGoal - todayTotal} 题完成今日目标`;
+  document.querySelector('#streakDays').textContent = calculateStreak();
+  document.querySelector('#avgSpeed').textContent = avgSpeed ? avgSpeed.toFixed(2) : '0';
+  document.querySelector('#last7Compare').textContent = sevenTotal ? `${((sevenCorrect / sevenTotal) * 100).toFixed(1)}%` : '0%';
+}
+
+function daysBetween(from, to) {
+  return Math.round((new Date(`${to}T00:00:00`) - new Date(`${from}T00:00:00`)) / 86400000);
+}
+
+function calculateStreak() {
+  const dates = new Set(records.map((item) => item.date));
+  let count = 0;
+  let cursor = today();
+  if (!dates.has(cursor)) cursor = new Date(new Date(`${cursor}T00:00:00`) - 86400000).toISOString().slice(0, 10);
+  while (dates.has(cursor)) { count += 1; cursor = new Date(new Date(`${cursor}T00:00:00`) - 86400000).toISOString().slice(0, 10); }
+  return count;
+}
+
+function renderCalendar() {
+  const year = calendarMonth.getFullYear();
+  const month = calendarMonth.getMonth();
+  document.querySelector('#calendarTitle').textContent = `${year}.${String(month + 1).padStart(2, '0')}`;
+  const monthRecords = records.filter((item) => { const date = new Date(`${item.date}T00:00:00`); return date.getFullYear() === year && date.getMonth() === month; });
+  const totals = monthRecords.reduce((map, item) => { map[item.date] = (map[item.date] || 0) + item.total; return map; }, {});
+  const max = Math.max(...Object.values(totals), 1);
+  const firstDay = new Date(year, month, 1).getDay();
+  const days = new Date(year, month + 1, 0).getDate();
+  document.querySelector('#calendarGrid').innerHTML = `${'<span class="calendar-cell empty"></span>'.repeat(firstDay)}${Array.from({ length: days }, (_, index) => { const day = index + 1; const key = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`; const value = totals[key] || 0; const level = value >= max * .75 ? 3 : value >= max * .4 ? 2 : value ? 1 : 0; return `<span class="calendar-cell ${value ? `has-data level-${level}` : ''} ${key === today() ? 'today' : ''}" title="${value ? `${value} 题` : '未记录'}">${day}</span>`; }).join('')}`;
+}
+
+function renderAnalysis() {
+  const typeMap = records.reduce((map, item) => { const row = map[item.type] || { total: 0, correct: 0 }; row.total += item.total; row.correct += item.correct; map[item.type] = row; return map; }, {});
+  const types = Object.entries(typeMap).map(([type, value]) => ({ type, ...value, accuracy: value.correct / value.total * 100 })).sort((a, b) => b.accuracy - a.accuracy);
+  document.querySelector('#typeAccuracy').innerHTML = types.length ? types.slice(0, 6).map((item) => `<div class="analysis-row"><span title="${escapeHtml(item.type)}">${escapeHtml(item.type)}</span><i class="analysis-track"><b style="width:${item.accuracy}%"></b></i><span>${item.accuracy.toFixed(1)}%</span></div>`).join('') : '<span class="required-note">填写记录后显示题型正确率</span>';
+  const errorMap = records.reduce((map, item) => { if (item.errorType) map[item.errorType] = (map[item.errorType] || 0) + item.wrong; return map; }, {});
+  const errors = Object.entries(errorMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const errorMax = Math.max(...errors.map((item) => item[1]), 1);
+  document.querySelector('#errorTotal').textContent = `${errors.reduce((sum, item) => sum + item[1], 0)} 次`;
+  document.querySelector('#errorBars').innerHTML = errors.length ? errors.map(([type, count]) => `<div class="error-row"><span title="${escapeHtml(type)}">${escapeHtml(type)}</span><i><b style="width:${count / errorMax * 100}%"></b></i><span>${count}</span></div>`).join('') : '<span class="required-note">填写错误类型后显示分布</span>';
 }
 
 function renderInsights(total, correct) {
@@ -112,6 +170,7 @@ function renderRecords() {
       <div class="record-top"><span class="record-date">${moneyDate(item.date)}</span><div class="record-actions"><button data-edit="${item.id}">编辑</button><button data-delete="${item.id}">删除</button></div></div>
       <div class="record-type">${escapeHtml(item.type)}</div>
       <div class="record-metrics"><span class="metric"><b>${item.minutes}</b> 分钟</span><span class="metric"><b>${item.total}</b> 题</span><span class="metric good">正确 <b>${item.correct}</b></span><span class="metric">错误 <b>${item.wrong}</b></span><span class="metric">正确率 <b>${accuracy}%</b></span></div>
+      ${item.errorType ? `<div class="record-error">错误类型：${escapeHtml(item.errorType)}</div>` : ''}
       ${item.note ? `<p class="record-note">${escapeHtml(item.note)}</p>` : ''}
     </article>`;
   }).join('');
@@ -153,14 +212,14 @@ function editRecord(id) {
 }
 
 async function cloudInsert(item) {
-  const data = await restRequest('training_sessions', { method: 'POST', body: JSON.stringify({ session_date: item.date, module: item.type, total: item.total, correct: item.correct, minutes: item.minutes, note: item.note || null }) });
+  const data = await restRequest('training_sessions', { method: 'POST', body: JSON.stringify({ session_date: item.date, module: item.type, total: item.total, correct: item.correct, minutes: item.minutes, note: item.note || null, error_type: item.errorType || null }) });
   return data?.[0];
 }
 
 async function cloudUpdate(item) {
   if (!item.id.startsWith('cloud-')) return;
   const id = item.id.slice(6);
-  await restRequest(`training_sessions?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ session_date: item.date, module: item.type, total: item.total, correct: item.correct, minutes: item.minutes, note: item.note || null }) });
+  await restRequest(`training_sessions?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ session_date: item.date, module: item.type, total: item.total, correct: item.correct, minutes: item.minutes, note: item.note || null, error_type: item.errorType || null }) });
 }
 
 async function cloudDelete(item) {
@@ -170,11 +229,11 @@ async function cloudDelete(item) {
 
 async function loadCloudRecords() {
   let data;
-  try { data = await restRequest('training_sessions?select=id,module,total,correct,minutes,session_date,note,created_at&order=session_date.desc'); }
+  try { data = await restRequest('training_sessions?select=id,module,total,correct,minutes,session_date,note,error_type,created_at&order=session_date.desc'); }
   catch (error) { cloudReady = false; syncStatus.textContent = `云端错误：${error.message.slice(0, 40)}`; return; }
   if (!data) { cloudReady = false; syncStatus.textContent = '云端不可用，本机数据保留'; return; }
   cloudReady = true;
-  const cloudRecords = data.map((item) => ({ id: `cloud-${item.id}`, date: item.session_date, type: item.module, minutes: item.minutes, total: item.total, correct: item.correct, wrong: item.total - item.correct, note: item.note || '' }));
+  const cloudRecords = data.map((item) => ({ id: `cloud-${item.id}`, date: item.session_date, type: item.module, minutes: item.minutes, total: item.total, correct: item.correct, wrong: item.total - item.correct, errorType: item.error_type || '', note: item.note || '' }));
   const localOnly = records.filter((local) => !cloudRecords.some((cloud) => cloud.date === local.date && cloud.type === local.type && cloud.total === local.total && cloud.correct === local.correct));
   // Never replace local data with an empty or incomplete cloud response.
   records = [...cloudRecords, ...localOnly];
@@ -185,7 +244,7 @@ async function loadCloudRecords() {
 
 async function syncLocalRecords() {
   let cloudData;
-  try { cloudData = await restRequest('training_sessions?select=id,module,total,correct,minutes,session_date,note'); }
+    try { cloudData = await restRequest('training_sessions?select=id,module,total,correct,minutes,session_date,note,error_type'); }
   catch { return; }
   const cloudRecords = cloudData || [];
   const pending = records.filter((local) => !local.id.startsWith('cloud-') && !cloudRecords.some((remote) => remote.session_date === local.date && remote.module === local.type && remote.total === local.total && remote.correct === local.correct));
@@ -206,7 +265,7 @@ form.addEventListener('submit', async (event) => {
   const data = new FormData(form);
   const total = number(data.get('total'));
   const correct = Math.min(total, number(data.get('correct')));
-  const item = { id: data.get('id') || `${Date.now()}`, date: data.get('date'), type: data.get('type').trim(), minutes: number(data.get('minutes')), total, correct, wrong: total - correct, note: data.get('note').trim() };
+  const item = { id: data.get('id') || `${Date.now()}`, date: data.get('date'), type: data.get('type').trim(), minutes: number(data.get('minutes')), total, correct, wrong: total - correct, errorType: data.get('errorType').trim(), note: data.get('note').trim() };
   if (!item.date || !item.type || !total) return showToast('请填写日期、类型和题数');
   const index = records.findIndex((record) => record.id === item.id);
   const isEdit = index >= 0;
@@ -227,6 +286,22 @@ form.addEventListener('submit', async (event) => {
 });
 
 document.querySelector('#resetForm').addEventListener('click', resetForm);
+document.querySelector('#saveGoal').addEventListener('click', () => { dailyGoal = Math.max(1, number(document.querySelector('#dailyGoal').value)); localStorage.setItem(GOAL_KEY, dailyGoal); renderStats(); showToast('每日目标已更新'); });
+document.querySelector('#prevMonth').addEventListener('click', () => { calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1); renderCalendar(); });
+document.querySelector('#nextMonth').addEventListener('click', () => { calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1); renderCalendar(); });
+document.querySelector('#copyYesterday').addEventListener('click', () => {
+  const yesterday = new Date(new Date(`${today()}T00:00:00`) - 86400000).toISOString().slice(0, 10);
+  const latest = records.filter((item) => item.date === yesterday).sort((a, b) => b.id.localeCompare(a.id))[0];
+  if (!latest) return showToast('昨天还没有记录');
+  form.elements.type.value = latest.type;
+  form.elements.minutes.value = latest.minutes;
+  form.elements.total.value = latest.total;
+  form.elements.correct.value = latest.correct;
+  form.elements.errorType.value = latest.errorType || '';
+  form.elements.note.value = latest.note || '';
+  updateWrong();
+  showToast('已复制昨天记录，请确认后保存');
+});
 document.querySelector('#searchInput').addEventListener('input', renderRecords);
 document.querySelector('#dateFilter').addEventListener('input', renderRecords);
 document.querySelector('#clearFilters').addEventListener('click', () => { document.querySelector('#searchInput').value = ''; document.querySelector('#dateFilter').value = ''; renderRecords(); });
@@ -258,3 +333,4 @@ resetForm();
 renderStats();
 renderRecords();
 syncCloud();
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
