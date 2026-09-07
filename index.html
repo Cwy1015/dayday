@@ -3,48 +3,57 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#f4f1ea" />
-    <title>行测 · 复盘台</title>
-    <meta name="deployment-version" content="2026-09-07-daily-log-8b15a5c" />
+    <meta name="theme-color" content="#f5f1e9" />
+    <title>备考局 · 每日刷题记录</title>
+    <meta name="deployment-version" content="2026-09-07-daily-log-single-page" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Noto+Serif+SC:wght@600;700;900&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@500;600;700;800&family=Noto+Serif+SC:wght@600;700;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <div class="app-shell">
-      <aside class="sidebar">
-        <div class="brand"><span class="brand-mark">考</span><div><strong>备考局</strong><small>PUBLIC EXAM LAB</small></div></div>
-        <div class="profile-card"><div class="avatar" id="profileAvatar">林</div><div><b id="profileName">林同学</b><span id="profileGoal">国考 · 还有 72 天</span></div><button class="more-btn" data-action="edit-profile">···</button></div>
-        <nav class="main-nav">
-          <button class="nav-item active" data-view="overview"><span>◈</span> 今日概览</button>
-          <button class="nav-item" data-view="practice"><span>⌁</span> 开始训练</button>
-          <button class="nav-item" data-view="daily"><span>◷</span> 每日记录</button>
-          <button class="nav-item" data-view="books"><span>▤</span> 题本记录</button>
-          <button class="nav-item" data-view="mistakes"><span>◌</span> 错题复盘 <em>12</em></button>
-          <button class="nav-item" data-view="analytics"><span>◫</span> 能力分析</button>
-          <button class="nav-item" data-view="plan"><span>□</span> 备考计划</button>
-        </nav>
-        <div class="side-bottom"><div class="streak"><span>连续学习</span><strong>14 <i>天</i></strong><div class="mini-dots"><i></i><i></i><i></i><i></i><i></i><i></i><i class="today"></i></div></div><button class="settings">⚙ 设置与数据</button></div>
-      </aside>
-      <main class="main-content">
-        <header class="topbar"><div class="breadcrumb">2026 国考备考 <span>/</span> <b>今日概览</b></div><div class="top-actions"><button class="sync-btn" data-action="auth">登录同步</button><button class="record-btn" data-action="open-record">+ 记录训练</button><button class="icon-btn">⌕</button><button class="icon-btn">♧</button><div class="date-chip">SEP 04, 2026 <span>☼</span></div></div></header>
-        <div class="view overview-view" id="overviewView">
-          <section class="hero"><div><p class="eyebrow">FRIDAY · DAY 14</p><h1>稳住节奏，<br /><em>今天也要有收获。</em></h1><p class="hero-sub">你已经连续学习 14 天。距离目标还有 <b>72 天</b>，今天完成度建议保持在 80% 以上。</p></div><div class="hero-orbit"><div class="orbit-ring"></div><div class="orbit-core"><strong id="heroPercent">68%</strong><span>今日完成度</span></div><div class="orbit-label label-top">专注<br /><b>01:42:18</b></div><div class="orbit-label label-bottom">较昨日 <b>+12%</b></div></div></section>
-          <section class="stats-grid"><article class="stat-card"><span class="card-label">今日正确率</span><strong id="accuracyStat">78.4<small>%</small></strong><div class="trend up">↗ 3.2% <span>vs 昨日</span></div><div class="sparkline"><i style="height:28%"></i><i style="height:44%"></i><i style="height:36%"></i><i style="height:62%"></i><i style="height:54%"></i><i style="height:78%"></i><i style="height:70%"></i><i class="hot" style="height:88%"></i></div></article><article class="stat-card"><span class="card-label">本周刷题量</span><strong id="questionStat">186<small> 题</small></strong><div class="trend up">↗ 24 <span>vs 上周同期</span></div><div class="week-bars"><i style="height:42%"></i><i style="height:68%"></i><i style="height:51%"></i><i style="height:88%"></i><i class="hot" style="height:74%"></i><i style="height:20%"></i><i class="muted" style="height:10%"></i></div><div class="week-labels"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div></article><article class="stat-card focus-card"><span class="card-label">当前最弱项</span><div class="focus-main"><div class="focus-icon">∑</div><div><strong>数量关系</strong><span>正确率 52.1%</span></div></div><div class="focus-foot"><span>建议今日优先</span><button data-action="start-focus">去练习 →</button></div></article></section>
-          <section class="content-grid"><article class="panel chart-panel"><div class="panel-head"><div><span class="section-kicker">PERFORMANCE</span><h2>能力走势</h2></div><div class="segmented"><button class="selected" data-period="week">近 7 天</button><button data-period="month">近 30 天</button></div></div><div class="legend"><span><i class="dot accuracy"></i>正确率</span><span><i class="dot speed"></i>答题速度</span></div><div class="chart-wrap"><div class="y-axis"><span>100%</span><span>80%</span><span>60%</span><span>40%</span><span>20%</span></div><svg class="line-chart" viewBox="0 0 700 230" preserveAspectRatio="none"><defs><linearGradient id="fillAccuracy" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#e8a04b" stop-opacity=".22"/><stop offset="1" stop-color="#e8a04b" stop-opacity="0"/></linearGradient></defs><path class="grid-lines" d="M0 18H700 M0 65H700 M0 112H700 M0 159H700 M0 206H700"/><path class="area" d="M0 127 C45 136 56 108 110 117 S165 157 220 112 S268 128 330 95 S390 102 440 82 S510 96 550 67 S625 90 700 45 V230 H0Z"/><path class="line accuracy-line" d="M0 127 C45 136 56 108 110 117 S165 157 220 112 S268 128 330 95 S390 102 440 82 S510 96 550 67 S625 90 700 45"/><path class="line speed-line" d="M0 160 C55 152 65 164 110 141 S165 130 220 148 S280 121 330 135 S395 128 440 113 S505 137 550 105 S625 127 700 96"/><g class="point-set"><circle cx="550" cy="67" r="5"/><circle cx="700" cy="45" r="5"/></g></svg><div class="x-axis"><span>8/29</span><span>8/30</span><span>8/31</span><span>9/1</span><span>9/2</span><span>9/3</span><span>今天</span></div></div></article><article class="panel todo-panel"><div class="panel-head"><div><span class="section-kicker">TODAY'S MISSION</span><h2>今日计划</h2></div><button class="text-btn" data-action="add-task">+ 添加</button></div><div class="progress-row"><div class="progress-track"><span id="progressBar"></span></div><b id="planProgress">3 / 5</b></div><div class="task-list" id="taskList"><label class="task done"><input type="checkbox" checked /><span class="check"></span><span><b>常识判断 · 高频考点</b><small>20 题 · 预计 25 分钟</small></span><time>已完成</time></label><label class="task done"><input type="checkbox" checked /><span class="check"></span><span><b>言语理解 · 逻辑填空</b><small>15 题 · 预计 20 分钟</small></span><time>已完成</time></label><label class="task"><input type="checkbox" /><span class="check"></span><span><b>数量关系 · 速算技巧</b><small>10 题 · 预计 30 分钟</small></span><time>待完成</time></label><label class="task"><input type="checkbox" /><span class="check"></span><span><b>申论小题 · 综合分析</b><small>1 题 · 预计 45 分钟</small></span><time>待完成</time></label><label class="task"><input type="checkbox" /><span class="check"></span><span><b>错题回炉 · 近 7 日</b><small>12 题 · 预计 15 分钟</small></span><time>待完成</time></label></div></article></section>
-          <section class="bottom-grid"><article class="panel mistake-panel"><div class="panel-head"><div><span class="section-kicker">REVIEW QUEUE</span><h2>错题待复盘 <span class="badge">12</span></h2></div><button class="text-btn" data-action="view-mistakes">查看全部 →</button></div><div class="mistake-item"><div class="mistake-type">数量关系</div><div class="mistake-copy"><b>工程问题：多者合作</b><span>连续错 3 次 · 上次复习 4 天前</span></div><button class="review-btn">复盘</button></div><div class="mistake-item"><div class="mistake-type orange">判断推理</div><div class="mistake-copy"><b>图形推理：位置类</b><span>易错点：元素叠加 · 上次复习 6 天前</span></div><button class="review-btn">复盘</button></div><div class="mistake-item"><div class="mistake-type green">言语理解</div><div class="mistake-copy"><b>主旨概括：转折关系</b><span>掌握度提升中 · 上次复习 2 天前</span></div><button class="review-btn">复盘</button></div></article><article class="panel quote-panel"><div class="quote-mark">“</div><p>把每一次错题，<br /><em>变成下一次的分数。</em></p><span>— 你的备考准则</span><div class="quote-lines"></div></article></section>
-        </div>
-        <div class="view placeholder-view" id="practiceView"><div class="placeholder-icon">⌁</div><span class="section-kicker">FOCUS MODE</span><h2>开始一组专注训练</h2><p>选择一个模块，计时开始后只专注当下这一组题。</p><div class="practice-options"><button data-action="start-timer"><b>数量关系</b><span>10 题 · 30 分钟</span></button><button data-action="start-timer"><b>言语理解</b><span>15 题 · 20 分钟</span></button><button data-action="start-timer"><b>判断推理</b><span>20 题 · 25 分钟</span></button></div></div>
-        <div class="view daily-view" id="dailyView"><div class="book-heading"><div><span class="section-kicker">DAILY PRACTICE LOG</span><h2>每日刷题记录</h2><p>每天填一条或多条训练记录，系统自动汇总题量、用时和正确率。</p></div></div><div class="daily-layout"><section class="book-form-card"><form id="dailyForm"><input type="hidden" name="id" /><div class="form-row"><label>日期<input name="date" type="date" required /></label><label>刷题类型<input name="type" placeholder="例如：资料分析专项" required /></label></div><div class="form-row"><label>总用时（分钟）<input name="minutes" type="number" min="0" placeholder="例如 45" required /></label><label>总题数<input name="total" type="number" min="1" placeholder="例如 30" required /></label></div><div class="form-row"><label>正确数量<input name="correct" type="number" min="0" placeholder="例如 24" required /></label><label>错误数量<input name="wrong" type="number" min="0" readonly placeholder="自动计算" /></label></div><label>备注<textarea name="note" rows="4" placeholder="今天的状态、卡住的知识点、明天要复习什么"></textarea></label><button class="save-btn" type="submit">保存每日记录</button></form></section><section class="book-list-card"><div class="list-toolbar"><div><span class="section-kicker">DAY BY DAY</span><h3>记录列表</h3></div><span class="record-count" id="dailyCount">0 条</span></div><div id="dailySummary" class="daily-summary"></div><div id="dailyRecords" class="book-records"></div><div id="emptyDaily" class="empty-books">还没有每日记录，填写左侧表单开始。</div></section></div></div>
-        <div class="view book-view" id="booksView"><div class="book-heading"><div><span class="section-kicker">QUESTION BOOKS</span><h2>题本记录</h2><p>记录你正在使用的题本，以及每一篇做到了哪里、错在哪里。</p></div><button class="record-btn" data-action="open-book-form">+ 新增记录</button></div><div class="book-layout"><section class="book-form-card" id="bookFormCard"><form id="bookForm"><input type="hidden" name="id" /><label>题本名称<input name="book" placeholder="例如：粉笔行测 5000 题" required /></label><div class="form-row"><label>篇 / 章节<input name="chapter" placeholder="例如：第 12 篇" required /></label><label>模块<input name="module" placeholder="例如：数量关系" required /></label></div><div class="form-row"><label>完成题数<input name="total" type="number" min="1" value="20" required /></label><label>错题数<input name="wrong" type="number" min="0" value="3" required /></label></div><label>错误内容<textarea name="errorContent" rows="4" placeholder="例如：工程问题中总量不统一；看到比例题容易跳步"></textarea></label><div class="form-row"><label>错误类型<input name="reason" placeholder="例如：知识盲区、方法错误" /></label><label>完成日期<input name="date" type="date" /></label></div><button class="save-btn" type="submit">保存题本记录</button></form></section><section class="book-list-card"><div class="list-toolbar"><div><span class="section-kicker">RECENT LOG</span><h3>最近记录</h3></div><span class="record-count" id="recordCount">0 条</span></div><div id="bookRecords" class="book-records"></div><div id="emptyBooks" class="empty-books">还没有题本记录，先添加今天完成的第一篇。</div></section></div></div>
-        <div class="view placeholder-view" id="mistakesView"><div class="placeholder-icon">◌</div><span class="section-kicker">ERROR NOTEBOOK</span><h2>错题复盘库</h2><p>把错误分成“知识盲区、方法错误、审题失误、时间压力”，复盘才会真正产生收益。</p><div class="error-cards"><div><b>知识盲区</b><strong>5</strong><span>需要重新学习</span></div><div><b>方法错误</b><strong>4</strong><span>需要看解法</span></div><div><b>审题失误</b><strong>3</strong><span>建立提醒</span></div></div></div>
-        <div class="view placeholder-view" id="analyticsView"><div class="placeholder-icon">◫</div><span class="section-kicker">ABILITY MAP</span><h2>能力分析</h2><p>你的数据会逐渐沉淀为一张能力地图，帮助你把时间花在提分空间最大的地方。</p><div class="ability-list"><div><span>资料分析</span><i><b style="width:86%"></b></i><strong>86%</strong></div><div><span>言语理解</span><i><b style="width:78%"></b></i><strong>78%</strong></div><div><span>判断推理</span><i><b style="width:71%"></b></i><strong>71%</strong></div><div><span>数量关系</span><i><b class="weak" style="width:52%"></b></i><strong>52%</strong></div></div></div>
-        <div class="view placeholder-view" id="planView"><div class="placeholder-icon">□</div><span class="section-kicker">LONG RUN</span><h2>备考计划</h2><p>把大目标拆成可执行的小周期，系统会根据完成度自动提醒你调整节奏。</p><div class="milestone"><span>当前阶段</span><b>基础夯实期</b><strong>第 2 / 4 周</strong><div><i></i></div></div></div>
-      </main>
-    </div>
-    <div class="modal-backdrop" id="recordModal" aria-hidden="true"><form class="record-modal" id="recordForm"><button type="button" class="modal-close" data-action="close-record">×</button><span class="section-kicker">NEW SESSION</span><h2>记录一组训练</h2><p>每次记录都会更新你的题量、正确率和能力趋势。</p><label>训练模块<input name="module" placeholder="例如：数量关系" required /></label><div class="form-row"><label>题目数<input name="total" type="number" min="1" value="10" required /></label><label>答对数<input name="correct" type="number" min="0" value="7" required /></label><label>用时（分钟）<input name="minutes" type="number" min="1" value="20" required /></label></div><label>主要错因<input name="reason" placeholder="例如：知识盲区" /></label><button class="save-btn" type="submit">保存训练记录</button></form></div>
-    <div class="toast" id="toast">已更新</div>
+    <main class="shell">
+      <header class="topbar">
+        <a class="brand" href="./"><span class="brand-mark">考</span><span><strong>备考局</strong><small>DAILY PRACTICE LOG</small></span></a>
+        <button class="sync-btn" data-action="auth">本机记录 · 登录同步</button>
+      </header>
+
+      <section class="intro">
+        <div><span class="eyebrow">ONE DAY · ONE RECORD</span><h1>每天记一笔，<em>看见自己的进步。</em></h1><p>只记录真正完成的训练。题型、用时、题量和正确数，都会自动沉淀成你的备考轨迹。</p></div>
+        <div class="today-mark"><span>今天</span><strong id="todayLabel">--</strong></div>
+      </section>
+
+      <section class="stats-grid" aria-label="学习统计">
+        <article class="stat-card"><span>累计刷题</span><strong id="totalQuestions">0</strong><small>题</small></article>
+        <article class="stat-card"><span>累计用时</span><strong id="totalMinutes">0</strong><small>分钟</small></article>
+        <article class="stat-card"><span>平均正确率</span><strong id="averageAccuracy">0</strong><small>%</small></article>
+        <article class="stat-card accent"><span>记录天数</span><strong id="recordDays">0</strong><small>天</small></article>
+      </section>
+
+      <section class="workspace">
+        <section class="panel form-panel">
+          <div class="panel-heading"><div><span class="section-kicker">ADD A LOG</span><h2 id="formTitle">记录今天</h2></div><span class="required-note">所有数据可修改</span></div>
+          <form id="dailyForm">
+            <input type="hidden" name="id" />
+            <div class="form-row"><label>日期<input name="date" type="date" required /></label><label>刷题类型<input name="type" placeholder="例如：资料分析专项" required /></label></div>
+            <div class="form-row"><label>总用时（分钟）<input name="minutes" type="number" min="0" step="1" placeholder="例如：45" required /></label><label>总题数<input name="total" type="number" min="1" step="1" placeholder="例如：30" required /></label></div>
+            <div class="form-row"><label>正确数量<input name="correct" type="number" min="0" step="1" placeholder="例如：24" required /></label><label>错误数量<input name="wrong" type="number" readonly placeholder="自动计算" /></label></div>
+            <label>备注 / 错题内容<textarea name="note" rows="5" placeholder="记录今天的状态、错题原因、明天要复习的知识点"></textarea></label>
+            <div class="form-actions"><button class="save-btn" type="submit">保存记录</button><button class="text-btn" id="resetForm" type="button">清空</button></div>
+          </form>
+          <p class="form-tip">未登录时保存在当前设备；登录 Supabase 后可跨手机、平板同步。</p>
+        </section>
+
+        <section class="panel records-panel">
+          <div class="panel-heading"><div><span class="section-kicker">YOUR LOGS</span><h2>刷题记录</h2></div><span class="record-count" id="recordCount">0 条</span></div>
+          <div class="filters"><input id="searchInput" type="search" placeholder="搜索刷题类型或备注" /><input id="dateFilter" type="date" aria-label="按日期筛选" /><button id="clearFilters" type="button">清除</button></div>
+          <div id="dailyRecords" class="records-list"></div>
+          <div id="emptyDaily" class="empty-state"><div class="empty-icon">✦</div><h3>还没有刷题记录</h3><p>从左侧填入今天完成的训练，第一条记录会出现在这里。</p></div>
+        </section>
+      </section>
+      <footer><span>数据由你掌控 · 每一条记录都属于你</span><span id="syncStatus">本机保存</span></footer>
+    </main>
+    <div class="toast" id="toast" role="status"></div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
     <script src="app.js"></script>
