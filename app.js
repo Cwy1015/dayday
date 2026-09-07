@@ -10,7 +10,7 @@ const toast = document.querySelector('#toast');
 const authButton = document.querySelector('[data-action="auth"]');
 const syncStatus = document.querySelector('#syncStatus');
 let records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-let cloudUser = null;
+let cloudReady = Boolean(supabaseClient);
 
 const today = () => {
   const date = new Date();
@@ -124,34 +124,53 @@ function editRecord(id) {
 }
 
 async function cloudInsert(item) {
-  if (!supabaseClient || !cloudUser) return;
-  const { error } = await supabaseClient.from('training_sessions').insert({ session_date: item.date, module: item.type, total: item.total, correct: item.correct, minutes: item.minutes, note: item.note || null });
+  if (!supabaseClient) return;
+  const { data, error } = await supabaseClient.from('training_sessions').insert({ session_date: item.date, module: item.type, total: item.total, correct: item.correct, minutes: item.minutes, note: item.note || null }).select('id').single();
   if (error) throw error;
+  return data;
 }
 
 async function cloudUpdate(item) {
-  if (!supabaseClient || !cloudUser || !item.id.startsWith('cloud-')) return;
+  if (!supabaseClient || !item.id.startsWith('cloud-')) return;
   const id = item.id.slice(6);
   const { error } = await supabaseClient.from('training_sessions').update({ session_date: item.date, module: item.type, total: item.total, correct: item.correct, minutes: item.minutes, note: item.note || null }).eq('id', id);
   if (error) throw error;
 }
 
 async function cloudDelete(item) {
-  if (!supabaseClient || !cloudUser || !item.id.startsWith('cloud-')) return;
+  if (!supabaseClient || !item.id.startsWith('cloud-')) return;
   const { error } = await supabaseClient.from('training_sessions').delete().eq('id', item.id.slice(6));
   if (error) throw error;
 }
 
 async function loadCloudRecords() {
-  if (!supabaseClient || !cloudUser) return;
+  if (!supabaseClient) return;
   const { data, error } = await supabaseClient.from('training_sessions').select('id,module,total,correct,minutes,session_date,note,created_at').order('session_date', { ascending: false });
-  if (error || !data) return;
+  if (error || !data) { cloudReady = false; return; }
+  cloudReady = true;
   const cloudRecords = data.map((item) => ({ id: `cloud-${item.id}`, date: item.session_date, type: item.module, minutes: item.minutes, total: item.total, correct: item.correct, wrong: item.total - item.correct, note: item.note || '' }));
   const localOnly = records.filter((local) => !cloudRecords.some((cloud) => cloud.date === local.date && cloud.type === local.type && cloud.total === local.total && cloud.correct === local.correct));
   records = [...cloudRecords, ...localOnly];
   saveLocal();
   renderStats();
   renderRecords();
+}
+
+async function syncLocalRecords() {
+  if (!supabaseClient) return;
+  const { data: cloudData, error } = await supabaseClient.from('training_sessions').select('id,module,total,correct,minutes,session_date,note');
+  if (error) return;
+  const cloudRecords = cloudData || [];
+  const pending = records.filter((local) => !local.id.startsWith('cloud-') && !cloudRecords.some((remote) => remote.session_date === local.date && remote.module === local.type && remote.total === local.total && remote.correct === local.correct));
+  for (const item of pending) {
+    try {
+      const created = await cloudInsert(item);
+      item.id = `cloud-${created.id}`;
+    } catch {
+      showToast('部分记录暂未同步，请稍后重试');
+    }
+  }
+  saveLocal();
 }
 
 form.addEventListener('input', updateWrong);
@@ -167,7 +186,17 @@ form.addEventListener('submit', async (event) => {
   if (isEdit) records[index] = item; else records.push(item);
   saveLocal(); renderStats(); renderRecords(); resetForm();
   showToast(isEdit ? '记录已修改' : '记录已保存');
-  try { if (isEdit) await cloudUpdate(item); else await cloudInsert(item); } catch { showToast('已保存本机，云端同步稍后重试'); }
+  try {
+    if (isEdit) await cloudUpdate(item);
+    else {
+      const created = await cloudInsert(item);
+      if (created?.id) {
+        const saved = records.find((record) => record.id === item.id);
+        if (saved) saved.id = `cloud-${created.id}`;
+        saveLocal();
+      }
+    }
+  } catch { showToast('已保存本机，云端同步稍后重试'); }
 });
 
 document.querySelector('#resetForm').addEventListener('click', resetForm);
@@ -186,25 +215,19 @@ recordsEl.addEventListener('click', (event) => {
   }
 });
 
-async function refreshAuth() {
-  if (!supabaseClient) return;
-  const { data } = await supabaseClient.auth.getUser();
-  cloudUser = data.user || null;
-  authButton.textContent = cloudUser ? '已登录 · 云端同步' : '本机记录 · 登录同步';
-  authButton.classList.toggle('logged', Boolean(cloudUser));
-  syncStatus.textContent = cloudUser ? `云端同步 · ${cloudUser.email || '已登录'}` : '本机保存';
-  if (cloudUser) await loadCloudRecords();
+async function syncCloud() {
+  if (!supabaseClient) return showToast('云端服务未配置，当前可正常本机使用');
+  syncStatus.textContent = '正在同步...';
+  await syncLocalRecords();
+  await loadCloudRecords();
+  syncStatus.textContent = cloudReady ? '已自动同步云端' : '云端策略未开启';
+  showToast(cloudReady ? '云端同步完成' : '请先执行同步策略 SQL');
 }
 
-authButton.addEventListener('click', async () => {
-  if (!supabaseClient) return showToast('云端服务未配置，当前可正常本机使用');
-  if (cloudUser) return showToast(`已登录：${cloudUser.email || 'Google 账号'}`);
-  const { error } = await supabaseClient.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
-  if (error) showToast('登录未完成，请检查 Supabase 配置');
-});
+authButton.addEventListener('click', syncCloud);
 
 document.querySelector('#todayLabel').textContent = moneyDate(today());
 resetForm();
 renderStats();
 renderRecords();
-refreshAuth();
+syncCloud();
