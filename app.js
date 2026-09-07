@@ -1,4 +1,8 @@
 const STORAGE_KEY = 'daily-practice-records';
+const ACCESS_CODE = 'ccday-7m4k2p';
+const accessValue = window.location.hash.replace(/^#\/?/, '').trim();
+const hasAccess = accessValue === ACCESS_CODE;
+if (!hasAccess) document.body.classList.add('locked');
 const config = window.SUPABASE_CONFIG || {};
 const supabaseClient = null;
 const form = document.querySelector('#dailyForm');
@@ -332,6 +336,7 @@ recordsEl.addEventListener('click', (event) => {
 });
 
 async function syncCloud() {
+  if (!hasAccess) return;
   if (!config.url || !config.anonKey) return showToast('云端服务未配置，当前可正常本机使用');
   syncStatus.textContent = '正在同步...';
   await syncLocalRecords();
