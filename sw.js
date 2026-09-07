@@ -1,4 +1,4 @@
-const CACHE = 'cc-day-shell-v11';
+const CACHE = 'cc-day-shell-v12';
 const ASSETS = ['./', './index.html', './style.css?v=visual-2', './supabase-config.js?v=visual-2', './app.js?v=access-path-1', './manifest.json'];
 
 self.addEventListener('install', (event) => {
