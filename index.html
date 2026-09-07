@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#f5f1e9" />
-    <title>备考局 · 每日刷题记录</title>
+    <title>CC Day</title>
     <meta name="deployment-version" content="2026-09-07-daily-log-single-page" />
     <link rel="manifest" href="manifest.json" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -34,7 +34,7 @@
       <section class="rhythm-panel panel"><div><span class="section-kicker">STUDY RHYTHM</span><h2>学习节奏</h2></div><div class="rhythm-metrics"><div><strong id="streakDays">0</strong><span>连续学习天数</span></div><div><strong id="avgSpeed">0</strong><span>平均分钟 / 题</span></div><div><strong id="last7Compare">0%</strong><span>近 7 天正确率</span></div><button class="text-btn" id="copyYesterday" type="button">复制昨天记录 →</button></div></section>
 
       <section class="insights-panel panel" aria-label="直观统计面板">
-        <div class="panel-heading"><div><span class="section-kicker">VISUAL INSIGHTS</span><h2>训练走势</h2></div><div class="range-switch"><button id="range7" class="selected" type="button">近 7 天</button><button id="range30" type="button">近 30 天</button></div></div>
+        <div class="panel-heading"><div><span class="section-kicker">VISUAL INSIGHTS</span><h2>近 7 天训练走势</h2></div><span class="required-note">题量和用时自动更新</span></div>
         <div class="insights-grid">
           <div class="trend-card"><div class="insight-title"><b id="trendTitle">近 7 天刷题量</b><span id="trendHint">暂无数据</span></div><div id="weeklyBars" class="weekly-bars"></div><div id="weeklyLabels" class="weekly-labels"></div></div>
           <div class="insight-card"><div class="insight-title"><b>题型分布</b><span id="topType">暂无数据</span></div><div id="typeBars" class="type-bars"></div></div>
@@ -76,6 +76,6 @@
     <div class="toast" id="toast" role="status"></div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=visual-2"></script>
-    <script src="app.js?v=range-layout-1"></script>
+    <script src="app.js?v=seven-day-only"></script>
   </body>
 </html>

@@ -10,7 +10,6 @@ const syncStatus = document.querySelector('#syncStatus');
 let records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 let cloudReady = Boolean(supabaseClient);
 let calendarMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-let trendRange = 7;
 
 async function restRequest(path, options = {}) {
   if (!config.url || !config.anonKey) throw new Error('Supabase 配置缺失');
@@ -125,18 +124,16 @@ function renderAnalysis() {
 
 function renderInsights(total, correct) {
   const date = new Date();
-  const days = Array.from({ length: trendRange }, (_, index) => {
+  const days = Array.from({ length: 7 }, (_, index) => {
     const current = new Date(date);
-    current.setDate(date.getDate() - (trendRange - 1 - index));
+    current.setDate(date.getDate() - (6 - index));
     const key = current.toISOString().slice(0, 10);
     const dayRecords = records.filter((item) => item.date === key);
     return { key, label: `${current.getMonth() + 1}/${current.getDate()}`, total: dayRecords.reduce((sum, item) => sum + item.total, 0), minutes: dayRecords.reduce((sum, item) => sum + item.minutes, 0) };
   });
   const max = Math.max(...days.map((item) => item.total), 1);
-  document.querySelector('#trendTitle').textContent = `近 ${trendRange} 天刷题量`;
-  document.querySelector('.insights-grid').className = `insights-grid range-${trendRange}`;
-  document.querySelector('#weeklyBars').className = `weekly-bars range-${trendRange}`;
-  document.querySelector('#weeklyLabels').className = `weekly-labels range-${trendRange}`;
+  document.querySelector('#weeklyBars').className = 'weekly-bars';
+  document.querySelector('#weeklyLabels').className = 'weekly-labels';
   document.querySelector('#weeklyBars').innerHTML = days.map((item, index) => `<div class="weekly-bar ${index === days.length - 1 ? 'today' : ''}" style="height:${Math.max(4, (item.total / max) * 100)}%"><span>${item.total || ''}</span></div>`).join('');
   document.querySelector('#weeklyLabels').innerHTML = days.map((item) => `<span>${item.label}</span>`).join('');
   const weekTotal = days.reduce((sum, item) => sum + item.total, 0);
@@ -297,8 +294,6 @@ form.addEventListener('submit', async (event) => {
 });
 
 document.querySelector('#resetForm').addEventListener('click', resetForm);
-document.querySelector('#range7').addEventListener('click', () => { trendRange = 7; document.querySelector('#range7').classList.add('selected'); document.querySelector('#range30').classList.remove('selected'); renderStats(); });
-document.querySelector('#range30').addEventListener('click', () => { trendRange = 30; document.querySelector('#range30').classList.add('selected'); document.querySelector('#range7').classList.remove('selected'); renderStats(); });
 document.querySelector('#prevMonth').addEventListener('click', () => { calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1); renderCalendar(); });
 document.querySelector('#nextMonth').addEventListener('click', () => { calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1); renderCalendar(); });
 document.querySelector('#calendarGrid').addEventListener('click', (event) => { const cell = event.target.closest('[data-date]'); if (cell) renderDayDetail(cell.dataset.date); });
