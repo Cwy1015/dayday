@@ -55,9 +55,11 @@ function renderStats() {
   const total = records.reduce((sum, item) => sum + item.total, 0);
   const minutes = records.reduce((sum, item) => sum + item.minutes, 0);
   const correct = records.reduce((sum, item) => sum + item.correct, 0);
+  const days = new Set(records.map((item) => item.date)).size;
   document.querySelector('#totalQuestions').textContent = total;
   document.querySelector('#totalMinutes').textContent = minutes;
   document.querySelector('#averageAccuracy').textContent = total ? ((correct / total) * 100).toFixed(1) : '0';
+  document.querySelector('#recordDays').textContent = days;
   renderInsights(total, correct);
   renderControlStats(total);
   renderCalendar();
