@@ -14,6 +14,7 @@ const syncStatus = document.querySelector('#syncStatus');
 let records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 let cloudReady = Boolean(supabaseClient);
 let calendarMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+let categoryFilter = 'all';
 
 async function restRequest(path, options = {}) {
   if (!config.url || !config.anonKey) throw new Error('Supabase 配置缺失');
@@ -165,7 +166,7 @@ function filteredRecords() {
   const date = document.querySelector('#dateFilter').value;
   return [...records].filter((item) => {
     const matchesSearch = !search || `${item.type} ${item.note}`.toLowerCase().includes(search);
-    return matchesSearch && (!date || item.date === date);
+    return matchesSearch && (!date || item.date === date) && (categoryFilter === 'all' || item.type === categoryFilter);
   }).sort((a, b) => `${b.date}-${b.id}`.localeCompare(`${a.date}-${a.id}`));
 }
 
@@ -173,6 +174,7 @@ function renderRecords() {
   const visible = filteredRecords();
   document.querySelector('#recordCount').textContent = `${visible.length} 条`;
   emptyEl.hidden = visible.length > 0;
+  renderCategoryFilters();
   renderDailyBreakdown(visible);
   recordsEl.innerHTML = visible.map((item) => {
     const accuracy = item.total ? ((item.correct / item.total) * 100).toFixed(1) : '0.0';
@@ -184,6 +186,11 @@ function renderRecords() {
       ${item.note ? `<p class="record-note">${escapeHtml(item.note)}</p>` : ''}
     </article>`;
   }).join('');
+}
+
+function renderCategoryFilters() {
+  const types = [...new Set(records.map((item) => item.type).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'zh-CN'));
+  document.querySelector('#categoryFilters').innerHTML = [['all', '全部'], ...types.map((type) => [type, type])].map(([value, label]) => `<button class="category-filter ${categoryFilter === value ? 'active' : ''}" data-category="${escapeHtml(value)}" type="button">${escapeHtml(label)}</button>`).join('');
 }
 
 function renderDailyBreakdown(visible) {
@@ -320,8 +327,9 @@ document.querySelector('#searchInput').addEventListener('input', renderRecords);
 document.querySelector('#dateFilter').addEventListener('input', renderRecords);
 document.querySelector('.insights-panel').addEventListener('click', (event) => { const button = event.target.closest('[data-type-filter]'); if (button) filterByType(button.dataset.typeFilter); });
 document.querySelector('.analysis-panel').addEventListener('click', (event) => { const button = event.target.closest('[data-type-filter]'); if (button) filterByType(button.dataset.typeFilter); });
-function filterByType(type) { document.querySelector('#searchInput').value = type; document.querySelector('#dateFilter').value = ''; renderRecords(); document.querySelector('#dailyRecords').scrollIntoView({ behavior: 'smooth', block: 'start' }); showToast(`正在查看：${type}`); }
-document.querySelector('#clearFilters').addEventListener('click', () => { document.querySelector('#searchInput').value = ''; document.querySelector('#dateFilter').value = ''; renderRecords(); });
+function filterByType(type) { categoryFilter = type; document.querySelector('#searchInput').value = ''; document.querySelector('#dateFilter').value = ''; renderRecords(); document.querySelector('#dailyRecords').scrollIntoView({ behavior: 'smooth', block: 'start' }); showToast(`正在查看：${type}`); }
+document.querySelector('#categoryFilters').addEventListener('click', (event) => { const button = event.target.closest('[data-category]'); if (!button) return; categoryFilter = button.dataset.category; renderRecords(); });
+document.querySelector('#clearFilters').addEventListener('click', () => { categoryFilter = 'all'; document.querySelector('#searchInput').value = ''; document.querySelector('#dateFilter').value = ''; renderRecords(); });
 document.querySelector('#retrySync').addEventListener('click', syncCloud);
 document.querySelector('#quickAdd').addEventListener('click', () => { resetForm(); form.scrollIntoView({ behavior: 'smooth', block: 'start' }); form.elements.type.focus(); });
 recordsEl.addEventListener('click', (event) => {

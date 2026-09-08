@@ -66,6 +66,7 @@
         <section class="panel records-panel">
           <div class="panel-heading"><div><span class="section-kicker">YOUR LOGS</span><h2>刷题记录</h2></div><span class="record-count" id="recordCount">0 条</span></div>
           <div class="filters"><input id="searchInput" type="search" placeholder="搜索刷题类型或备注" /><input id="dateFilter" type="date" aria-label="按日期筛选" /><button id="clearFilters" type="button">清除</button></div>
+          <div id="categoryFilters" class="category-filters"></div>
           <div id="dailyBreakdown" class="daily-breakdown"></div>
           <div id="dailyRecords" class="records-list"></div>
           <div id="emptyDaily" class="empty-state"><div class="empty-icon">✦</div><h3>还没有刷题记录</h3><p>从左侧填入今天完成的训练，第一条记录会出现在这里。</p></div>
@@ -77,6 +78,6 @@
     <div class="toast" id="toast" role="status"></div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=visual-2"></script>
-    <script src="app.js?v=access-path-1"></script>
+    <script src="app.js?v=category-scroll-1"></script>
   </body>
 </html>
