@@ -1,6 +1,6 @@
 const STORAGE_KEY = 'daily-practice-records';
 const ACCESS_CODE = 'ccday-7m4k2p';
-const accessValue = window.location.hash.replace(/^#\/?/, '').trim();
+const accessValue = window.location.hash.replace(/^#\/?/, '').split('?')[0].trim();
 const hasAccess = accessValue === ACCESS_CODE;
 if (!hasAccess) document.body.classList.add('locked');
 const config = window.SUPABASE_CONFIG || {};
