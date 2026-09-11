@@ -45,7 +45,7 @@
 
       <section class="tracking-grid">
         <section class="calendar-panel panel"><div class="panel-heading"><div><span class="section-kicker">STUDY CALENDAR</span><h2>学习日历</h2></div><div class="calendar-nav"><button id="prevMonth" type="button">‹</button><strong id="calendarTitle">--</strong><button id="nextMonth" type="button">›</button></div></div><div class="calendar-week"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div><div id="calendarGrid" class="calendar-grid"></div><div id="dayDetail" class="day-detail"><span>点击有记录的日期查看当天详情</span></div><p class="calendar-tip">颜色越深，代表当天刷题量越多</p></section>
-        <section class="analysis-panel panel"><div class="panel-heading"><div><span class="section-kicker">ABILITY REVIEW</span><h2>题型表现</h2></div><span class="required-note">按正确率排序</span></div><div id="typeAccuracy" class="analysis-list"></div><div class="error-heading"><span>错误类型</span><span id="errorTotal">0 次</span></div><div id="errorBars" class="error-bars"></div></section>
+        <section class="analysis-panel panel"><div class="panel-heading"><div><span class="section-kicker">ABILITY REVIEW</span><h2>题型看板</h2></div><span class="required-note">点击题型查看记录</span></div><div id="typeDashboard" class="type-dashboard"></div><div class="error-heading"><span>错误类型</span><span id="errorTotal">0 次</span></div><div id="errorBars" class="error-bars"></div></section>
       </section>
 
       <section class="workspace">
@@ -78,6 +78,6 @@
     <div class="toast" id="toast" role="status"></div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=visual-2"></script>
-    <script src="app.js?v=category-scroll-1"></script>
+    <script src="app.js?v=type-dashboard-1"></script>
   </body>
 </html>
