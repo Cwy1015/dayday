@@ -147,7 +147,8 @@ function renderInsights(total, correct) {
   document.querySelector('#trendHint').textContent = weekTotal ? `${weekTotal} 题 · ${weekMinutes} 分钟` : '暂无数据';
 
   const typeTotals = records.reduce((map, item) => { map[item.type] = (map[item.type] || 0) + item.total; return map; }, {});
-  const topTypes = Object.entries(typeTotals).sort((a, b) => b[1] - a[1]).slice(0, 4);
+  // Keep every recorded subject visible; the panel itself scrolls as subjects grow.
+  const topTypes = Object.entries(typeTotals).sort((a, b) => b[1] - a[1]);
   const typeMax = Math.max(...topTypes.map((item) => item[1]), 1);
   document.querySelector('#typeBars').innerHTML = topTypes.length
     ? topTypes.map(([type, value]) => `<button class="type-row" data-type-filter="${escapeHtml(type)}" type="button"><span title="${escapeHtml(type)}">${escapeHtml(type)}</span><i class="type-track"><b style="width:${(value / typeMax) * 100}%"></b></i><span>${value} 题</span></button>`).join('')
