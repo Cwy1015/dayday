@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@500;600;700;800&family=Noto+Serif+SC:wght@600;700;900&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="style.css?v=visual-4" />
+    <link rel="stylesheet" href="style.css?v=public-basics-1" />
   </head>
   <body>
     <section id="accessGate" class="access-gate"><div class="access-card"><span class="brand-mark">考</span><h1>CC Day</h1><p>请使用完整访问链接打开</p><small>这是个人记录空间</small></div></section>
@@ -40,6 +40,7 @@
           <div class="trend-card"><div class="insight-title"><b id="trendTitle">近 7 天刷题量</b><span id="trendHint">暂无数据</span></div><div id="weeklyBars" class="weekly-bars"></div><div id="weeklyLabels" class="weekly-labels"></div></div>
           <div class="insight-card"><div class="insight-title"><b>题型分布</b><span id="topType">暂无数据</span></div><div id="typeBars" class="type-bars"></div></div>
           <div class="insight-card"><div class="insight-title"><b>正确率表现</b><span id="accuracyHint">暂无数据</span></div><div class="accuracy-meter"><div><span>累计正确率</span><strong id="panelAccuracy">0%</strong></div><i><b id="accuracyFill"></b></i><small id="accuracyText">记录后会显示表现</small></div></div>
+          <div class="insight-card public-basics-card"><div class="insight-title"><b>公基专项</b><span id="publicBasicsHint">暂无记录</span></div><div class="public-basics-metrics"><div><span>累计用时</span><strong id="publicBasicsMinutes">0</strong><small>分钟</small></div><div><span>正确率</span><strong id="publicBasicsAccuracy">0%</strong></div><div><span>总题数</span><strong id="publicBasicsTotal">0</strong><small>题</small></div><div><span>平均用时</span><strong id="publicBasicsSpeed">0</strong><small>分/题</small></div></div></div>
         </div>
       </section>
 
@@ -78,6 +79,6 @@
     <div class="toast" id="toast" role="status"></div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=visual-2"></script>
-    <script src="app.js?v=all-subjects-1"></script>
+    <script src="app.js?v=public-basics-1"></script>
   </body>
 </html>

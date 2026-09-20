@@ -155,6 +155,16 @@ function renderInsights(total, correct) {
     : '<span class="required-note">填写记录后显示题型分布</span>';
   document.querySelector('#topType').textContent = topTypes[0] ? `最多：${topTypes[0][0]}` : '暂无数据';
 
+  const publicBasics = records.filter((item) => /公基|公共基础/.test(String(item.type || '')));
+  const publicBasicsTotal = publicBasics.reduce((sum, item) => sum + item.total, 0);
+  const publicBasicsCorrect = publicBasics.reduce((sum, item) => sum + item.correct, 0);
+  const publicBasicsMinutes = publicBasics.reduce((sum, item) => sum + item.minutes, 0);
+  document.querySelector('#publicBasicsMinutes').textContent = publicBasicsMinutes;
+  document.querySelector('#publicBasicsTotal').textContent = publicBasicsTotal;
+  document.querySelector('#publicBasicsAccuracy').textContent = publicBasicsTotal ? `${((publicBasicsCorrect / publicBasicsTotal) * 100).toFixed(1)}%` : '0%';
+  document.querySelector('#publicBasicsSpeed').textContent = publicBasicsTotal ? (publicBasicsMinutes / publicBasicsTotal).toFixed(2) : '0';
+  document.querySelector('#publicBasicsHint').textContent = publicBasicsTotal ? `${publicBasics.length} 组记录` : '暂无记录';
+
   const accuracy = total ? (correct / total) * 100 : 0;
   document.querySelector('#panelAccuracy').textContent = `${accuracy.toFixed(1)}%`;
   document.querySelector('#accuracyFill').style.width = `${accuracy}%`;
