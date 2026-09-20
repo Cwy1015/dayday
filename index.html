@@ -28,14 +28,13 @@
       <section class="stats-grid" aria-label="学习统计">
         <article class="stat-card"><span>累计刷题</span><strong id="totalQuestions">0</strong><small>题</small></article>
         <article class="stat-card"><span>累计用时</span><strong id="totalMinutes">0</strong><small>分钟</small></article>
-        <article class="stat-card accent"><span>平均正确率</span><strong id="averageAccuracy">0</strong><small>%</small></article>
         <article class="stat-card"><span>记录天数</span><strong id="recordDays">0</strong><small>天</small></article>
       </section>
 
       <section class="insights-panel panel" aria-label="直观统计面板">
-        <div class="panel-heading"><div><span class="section-kicker">VISUAL INSIGHTS</span><h2>近 7 天训练走势</h2></div><span class="required-note">题量和用时自动更新</span></div>
+        <div class="panel-heading"><div><span class="section-kicker">VISUAL INSIGHTS</span><h2>训练总览</h2></div><span class="required-note">累计数据自动更新</span></div>
         <div class="insights-grid">
-          <div class="trend-card"><div class="insight-title"><b id="trendTitle">近 7 天刷题量</b><span id="trendHint">暂无数据</span></div><div id="weeklyBars" class="weekly-bars"></div><div id="weeklyLabels" class="weekly-labels"></div></div>
+          <div class="trend-card total-summary-card"><div class="insight-title"><b>累计训练汇总</b><span id="trendHint">暂无数据</span></div><div class="total-summary-metrics"><div><span>累计刷题</span><strong id="summaryTotal">0</strong><small>题</small></div><div><span>累计用时</span><strong id="summaryMinutes">0</strong><small>分钟</small></div><div><span>记录天数</span><strong id="summaryDays">0</strong><small>天</small></div><div><span>普通题型平均</span><strong id="summarySpeed">0</strong><small>分/题</small></div></div></div>
           <div class="insight-card"><div class="insight-title"><b>题型分布</b><span id="topType">暂无数据</span></div><div id="typeBars" class="type-bars"></div></div>
           <div class="insight-card"><div class="insight-title"><b>正确率表现</b><span id="accuracyHint">暂无数据</span></div><div class="accuracy-meter"><div><span>累计正确率</span><strong id="panelAccuracy">0%</strong></div><i><b id="accuracyFill"></b></i><small id="accuracyText">记录后会显示表现</small><div class="general-speed"><span>平均分钟 / 题</span><strong id="generalSpeed">0</strong></div></div></div>
           <div class="insight-card public-basics-card"><div class="insight-title"><b>公基专项</b><span id="publicBasicsHint">暂无记录</span></div><div class="public-basics-metrics"><div><span>累计用时</span><strong id="publicBasicsMinutes">0</strong><small>分钟</small></div><div><span>正确率</span><strong id="publicBasicsAccuracy">0%</strong></div><div><span>总题数</span><strong id="publicBasicsTotal">0</strong><small>题</small></div><div><span>平均用时</span><strong id="publicBasicsSpeed">0</strong><small>分/题</small></div></div></div>
@@ -52,7 +51,7 @@
           <div class="panel-heading"><div><span class="section-kicker">ADD A LOG</span><h2 id="formTitle">记录今天</h2></div><span class="required-note">所有数据可修改</span></div>
           <form id="dailyForm">
             <input type="hidden" name="id" />
-            <div class="form-row"><label>日期<input name="date" type="date" required /></label><label>刷题类型<input name="type" placeholder="例如：资料分析专项" required /></label></div>
+            <div class="form-row"><label>日期<input name="date" type="date" required /></label><label>刷题类型<select name="type" required><option value="" disabled selected>请选择题型</option><option value="公基">公基</option><option value="资料分析">资料分析</option><option value="言语理解">言语理解</option><option value="逻辑填空">逻辑填空</option><option value="图形推理">图形推理</option><option value="类比推理">类比推理</option><option value="定义判断">定义判断</option><option value="逻辑判断">逻辑判断</option><option value="数量关系">数量关系</option><option value="数字推理">数字推理</option></select></label></div>
             <div class="form-row"><label>总用时（分钟）<input name="minutes" type="number" min="0" step="1" placeholder="例如：45" required /></label><label>总题数<input name="total" type="number" min="1" step="1" placeholder="例如：30" required /></label></div>
             <div class="form-row"><label>正确数量<input name="correct" type="number" min="0" step="1" placeholder="例如：24" required /></label><label>错误数量<input name="wrong" type="number" readonly placeholder="自动计算" /></label></div>
             <label>主要错误类型<input name="errorType" placeholder="例如：知识盲区、审题失误、粗心、时间不足" /></label>
@@ -77,6 +76,6 @@
     <div class="toast" id="toast" role="status"></div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=visual-2"></script>
-    <script src="app.js?v=remove-rhythm-1"></script>
+    <script src="app.js?v=total-summary-1"></script>
   </body>
 </html>

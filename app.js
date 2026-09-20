@@ -67,7 +67,6 @@ function renderStats() {
   const days = new Set(records.map((item) => item.date)).size;
   document.querySelector('#totalQuestions').textContent = total;
   document.querySelector('#totalMinutes').textContent = minutes;
-  document.querySelector('#averageAccuracy').textContent = generalTotal ? ((correct / generalTotal) * 100).toFixed(1) : '0';
   document.querySelector('#recordDays').textContent = days;
   renderInsights(generalTotal, correct);
   renderCalendar();
@@ -107,22 +106,14 @@ function renderAnalysis() {
 }
 
 function renderInsights(total, correct) {
-  const date = new Date();
-  const days = Array.from({ length: 7 }, (_, index) => {
-    const current = new Date(date);
-    current.setDate(date.getDate() - (6 - index));
-    const key = current.toISOString().slice(0, 10);
-    const dayRecords = records.filter((item) => item.date === key);
-    return { key, label: `${current.getMonth() + 1}/${current.getDate()}`, total: dayRecords.reduce((sum, item) => sum + item.total, 0), minutes: dayRecords.reduce((sum, item) => sum + item.minutes, 0) };
-  });
-  const max = Math.max(...days.map((item) => item.total), 1);
-  document.querySelector('#weeklyBars').className = 'weekly-bars';
-  document.querySelector('#weeklyLabels').className = 'weekly-labels';
-  document.querySelector('#weeklyBars').innerHTML = days.map((item, index) => `<div class="weekly-bar ${index === days.length - 1 ? 'today' : ''}" style="height:${Math.max(4, (item.total / max) * 100)}%"><span>${item.total || ''}</span></div>`).join('');
-  document.querySelector('#weeklyLabels').innerHTML = days.map((item) => `<span>${item.label}</span>`).join('');
-  const weekTotal = days.reduce((sum, item) => sum + item.total, 0);
-  const weekMinutes = days.reduce((sum, item) => sum + item.minutes, 0);
-  document.querySelector('#trendHint').textContent = weekTotal ? `${weekTotal} 题 · ${weekMinutes} 分钟` : '暂无数据';
+  const allMinutes = records.reduce((sum, item) => sum + item.minutes, 0);
+  const allDays = new Set(records.map((item) => item.date)).size;
+  const generalMinutes = records.filter((item) => !isPublicBasics(item)).reduce((sum, item) => sum + item.minutes, 0);
+  document.querySelector('#summaryTotal').textContent = records.reduce((sum, item) => sum + item.total, 0);
+  document.querySelector('#summaryMinutes').textContent = allMinutes;
+  document.querySelector('#summaryDays').textContent = allDays;
+  document.querySelector('#summarySpeed').textContent = total ? (generalMinutes / total).toFixed(2) : '0';
+  document.querySelector('#trendHint').textContent = records.length ? `${records.length} 组记录` : '暂无数据';
 
   const typeTotals = records.reduce((map, item) => { map[item.type] = (map[item.type] || 0) + item.total; return map; }, {});
   // Keep every recorded subject visible; the panel itself scrolls as subjects grow.
@@ -148,7 +139,6 @@ function renderInsights(total, correct) {
   document.querySelector('#accuracyFill').style.width = `${accuracy}%`;
   document.querySelector('#accuracyHint').textContent = total ? (accuracy >= 80 ? '状态不错' : accuracy >= 60 ? '继续保持' : '重点复盘') : '暂无数据';
   document.querySelector('#accuracyText').textContent = total ? `共完成 ${total} 题，答对 ${correct} 题` : '记录后会显示表现';
-  const generalMinutes = records.filter((item) => !isPublicBasics(item)).reduce((sum, item) => sum + item.minutes, 0);
   document.querySelector('#generalSpeed').textContent = total ? (generalMinutes / total).toFixed(2) : '0';
 }
 
