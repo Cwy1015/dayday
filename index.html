@@ -34,7 +34,6 @@
       <section class="insights-panel panel" aria-label="直观统计面板">
         <div class="panel-heading"><div><span class="section-kicker">VISUAL INSIGHTS</span><h2>训练总览</h2></div><span class="required-note">累计数据自动更新</span></div>
         <div class="insights-grid">
-          <div class="trend-card total-summary-card"><div class="insight-title"><b>累计训练汇总</b><span id="trendHint">暂无数据</span></div><div class="total-summary-metrics"><div><span>累计刷题</span><strong id="summaryTotal">0</strong><small>题</small></div><div><span>累计用时</span><strong id="summaryMinutes">0</strong><small>分钟</small></div><div><span>记录天数</span><strong id="summaryDays">0</strong><small>天</small></div><div><span>普通题型平均</span><strong id="summarySpeed">0</strong><small>分/题</small></div></div></div>
           <div class="insight-card"><div class="insight-title"><b>题型分布</b><span id="topType">暂无数据</span></div><div id="typeBars" class="type-bars"></div></div>
           <div class="insight-card"><div class="insight-title"><b>正确率表现</b><span id="accuracyHint">暂无数据</span></div><div class="accuracy-meter"><div><span>累计正确率</span><strong id="panelAccuracy">0%</strong></div><i><b id="accuracyFill"></b></i><small id="accuracyText">记录后会显示表现</small><div class="general-speed"><span>平均分钟 / 题</span><strong id="generalSpeed">0</strong></div></div></div>
           <div class="insight-card public-basics-card"><div class="insight-title"><b>公基专项</b><span id="publicBasicsHint">暂无记录</span></div><div class="public-basics-metrics"><div><span>累计用时</span><strong id="publicBasicsMinutes">0</strong><small>分钟</small></div><div><span>正确率</span><strong id="publicBasicsAccuracy">0%</strong></div><div><span>总题数</span><strong id="publicBasicsTotal">0</strong><small>题</small></div><div><span>平均用时</span><strong id="publicBasicsSpeed">0</strong><small>分/题</small></div></div></div>
@@ -76,6 +75,6 @@
     <div class="toast" id="toast" role="status"></div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=visual-2"></script>
-    <script src="app.js?v=total-summary-1"></script>
+    <script src="app.js?v=remove-summary-card-1"></script>
   </body>
 </html>

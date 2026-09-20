@@ -106,14 +106,7 @@ function renderAnalysis() {
 }
 
 function renderInsights(total, correct) {
-  const allMinutes = records.reduce((sum, item) => sum + item.minutes, 0);
-  const allDays = new Set(records.map((item) => item.date)).size;
   const generalMinutes = records.filter((item) => !isPublicBasics(item)).reduce((sum, item) => sum + item.minutes, 0);
-  document.querySelector('#summaryTotal').textContent = records.reduce((sum, item) => sum + item.total, 0);
-  document.querySelector('#summaryMinutes').textContent = allMinutes;
-  document.querySelector('#summaryDays').textContent = allDays;
-  document.querySelector('#summarySpeed').textContent = total ? (generalMinutes / total).toFixed(2) : '0';
-  document.querySelector('#trendHint').textContent = records.length ? `${records.length} 组记录` : '暂无数据';
 
   const typeTotals = records.reduce((map, item) => { map[item.type] = (map[item.type] || 0) + item.total; return map; }, {});
   // Keep every recorded subject visible; the panel itself scrolls as subjects grow.
