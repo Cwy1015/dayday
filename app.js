@@ -41,6 +41,7 @@ const today = () => {
 };
 const moneyDate = (value) => value ? value.replaceAll('-', '.') : '--';
 const number = (value) => Math.max(0, Number(value) || 0);
+const isPublicBasics = (item) => /公基|公共基础/.test(String(item.type || ''));
 
 function showToast(message) {
   toast.textContent = message;
@@ -60,13 +61,15 @@ function updateWrong() {
 function renderStats() {
   const total = records.reduce((sum, item) => sum + item.total, 0);
   const minutes = records.reduce((sum, item) => sum + item.minutes, 0);
-  const correct = records.reduce((sum, item) => sum + item.correct, 0);
+  const generalRecords = records.filter((item) => !isPublicBasics(item));
+  const generalTotal = generalRecords.reduce((sum, item) => sum + item.total, 0);
+  const correct = generalRecords.reduce((sum, item) => sum + item.correct, 0);
   const days = new Set(records.map((item) => item.date)).size;
   document.querySelector('#totalQuestions').textContent = total;
   document.querySelector('#totalMinutes').textContent = minutes;
-  document.querySelector('#averageAccuracy').textContent = total ? ((correct / total) * 100).toFixed(1) : '0';
+  document.querySelector('#averageAccuracy').textContent = generalTotal ? ((correct / generalTotal) * 100).toFixed(1) : '0';
   document.querySelector('#recordDays').textContent = days;
-  renderInsights(total, correct);
+  renderInsights(generalTotal, correct);
   renderControlStats(total);
   renderCalendar();
   renderAnalysis();
@@ -74,7 +77,7 @@ function renderStats() {
 
 function renderControlStats(total) {
   const current = today();
-  const sevenDays = records.filter((item) => daysBetween(item.date, current) >= 0 && daysBetween(item.date, current) < 7);
+  const sevenDays = records.filter((item) => !isPublicBasics(item) && daysBetween(item.date, current) >= 0 && daysBetween(item.date, current) < 7);
   const sevenTotal = sevenDays.reduce((sum, item) => sum + item.total, 0);
   const sevenCorrect = sevenDays.reduce((sum, item) => sum + item.correct, 0);
   const avgSpeed = total ? records.reduce((sum, item) => sum + item.minutes, 0) / total : 0;
@@ -155,7 +158,7 @@ function renderInsights(total, correct) {
     : '<span class="required-note">填写记录后显示题型分布</span>';
   document.querySelector('#topType').textContent = topTypes[0] ? `最多：${topTypes[0][0]}` : '暂无数据';
 
-  const publicBasics = records.filter((item) => /公基|公共基础/.test(String(item.type || '')));
+  const publicBasics = records.filter(isPublicBasics);
   const publicBasicsTotal = publicBasics.reduce((sum, item) => sum + item.total, 0);
   const publicBasicsCorrect = publicBasics.reduce((sum, item) => sum + item.correct, 0);
   const publicBasicsMinutes = publicBasics.reduce((sum, item) => sum + item.minutes, 0);
