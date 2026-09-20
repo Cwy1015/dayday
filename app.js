@@ -70,33 +70,8 @@ function renderStats() {
   document.querySelector('#averageAccuracy').textContent = generalTotal ? ((correct / generalTotal) * 100).toFixed(1) : '0';
   document.querySelector('#recordDays').textContent = days;
   renderInsights(generalTotal, correct);
-  renderControlStats(total);
   renderCalendar();
   renderAnalysis();
-}
-
-function renderControlStats(total) {
-  const current = today();
-  const sevenDays = records.filter((item) => !isPublicBasics(item) && daysBetween(item.date, current) >= 0 && daysBetween(item.date, current) < 7);
-  const sevenTotal = sevenDays.reduce((sum, item) => sum + item.total, 0);
-  const sevenCorrect = sevenDays.reduce((sum, item) => sum + item.correct, 0);
-  const avgSpeed = total ? records.reduce((sum, item) => sum + item.minutes, 0) / total : 0;
-  document.querySelector('#streakDays').textContent = calculateStreak();
-  document.querySelector('#avgSpeed').textContent = avgSpeed ? avgSpeed.toFixed(2) : '0';
-  document.querySelector('#last7Compare').textContent = sevenTotal ? `${((sevenCorrect / sevenTotal) * 100).toFixed(1)}%` : '0%';
-}
-
-function daysBetween(from, to) {
-  return Math.round((new Date(`${to}T00:00:00`) - new Date(`${from}T00:00:00`)) / 86400000);
-}
-
-function calculateStreak() {
-  const dates = new Set(records.map((item) => item.date));
-  let count = 0;
-  let cursor = today();
-  if (!dates.has(cursor)) cursor = new Date(new Date(`${cursor}T00:00:00`) - 86400000).toISOString().slice(0, 10);
-  while (dates.has(cursor)) { count += 1; cursor = new Date(new Date(`${cursor}T00:00:00`) - 86400000).toISOString().slice(0, 10); }
-  return count;
 }
 
 function renderCalendar() {
@@ -173,6 +148,8 @@ function renderInsights(total, correct) {
   document.querySelector('#accuracyFill').style.width = `${accuracy}%`;
   document.querySelector('#accuracyHint').textContent = total ? (accuracy >= 80 ? '状态不错' : accuracy >= 60 ? '继续保持' : '重点复盘') : '暂无数据';
   document.querySelector('#accuracyText').textContent = total ? `共完成 ${total} 题，答对 ${correct} 题` : '记录后会显示表现';
+  const generalMinutes = records.filter((item) => !isPublicBasics(item)).reduce((sum, item) => sum + item.minutes, 0);
+  document.querySelector('#generalSpeed').textContent = total ? (generalMinutes / total).toFixed(2) : '0';
 }
 
 function filteredRecords() {
@@ -324,19 +301,6 @@ document.querySelector('#prevMonth').addEventListener('click', () => { calendarM
 document.querySelector('#nextMonth').addEventListener('click', () => { calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1); renderCalendar(); });
 document.querySelector('#calendarGrid').addEventListener('click', (event) => { const cell = event.target.closest('[data-date]'); if (cell) renderDayDetail(cell.dataset.date); });
 document.querySelector('#dayDetail').addEventListener('click', (event) => { const button = event.target.closest('[data-day-filter]'); if (!button) return; document.querySelector('#dateFilter').value = button.dataset.dayFilter; renderRecords(); document.querySelector('#dailyRecords').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
-document.querySelector('#copyYesterday').addEventListener('click', () => {
-  const yesterday = new Date(new Date(`${today()}T00:00:00`) - 86400000).toISOString().slice(0, 10);
-  const latest = records.filter((item) => item.date === yesterday).sort((a, b) => b.id.localeCompare(a.id))[0];
-  if (!latest) return showToast('昨天还没有记录');
-  form.elements.type.value = latest.type;
-  form.elements.minutes.value = latest.minutes;
-  form.elements.total.value = latest.total;
-  form.elements.correct.value = latest.correct;
-  form.elements.errorType.value = latest.errorType || '';
-  form.elements.note.value = latest.note || '';
-  updateWrong();
-  showToast('已复制昨天记录，请确认后保存');
-});
 document.querySelector('#searchInput').addEventListener('input', renderRecords);
 document.querySelector('#dateFilter').addEventListener('input', renderRecords);
 document.querySelector('.insights-panel').addEventListener('click', (event) => { const button = event.target.closest('[data-type-filter]'); if (button) filterByType(button.dataset.typeFilter); });
