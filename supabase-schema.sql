@@ -51,8 +51,13 @@ create table if not exists public.memory_cards (
   category text not null,
   content text not null,
   answer text,
+  content_image text,
+  answer_image text,
   created_at timestamptz not null default now()
 );
+
+alter table public.memory_cards add column if not exists content_image text;
+alter table public.memory_cards add column if not exists answer_image text;
 
 alter table public.training_sessions enable row level security;
 alter table public.study_tasks enable row level security;

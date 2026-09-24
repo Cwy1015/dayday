@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@500;600;700;800&family=Noto+Serif+SC:wght@600;700;900&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="style.css?v=memory-simple-1" />
+    <link rel="stylesheet" href="style.css?v=memory-image-1" />
   </head>
   <body>
     <section id="accessGate" class="access-gate"><div class="access-card"><span class="brand-mark">考</span><h1>CC Day</h1><p>请使用完整访问链接打开</p><small>这是个人记录空间</small></div></section>
@@ -77,8 +77,12 @@
         <div class="memory-dialog-head"><div><span class="section-kicker">MEMORY NOTES</span><h2 id="memoryTitle">每日记忆</h2></div><button class="modal-close" id="closeMemory" type="button" aria-label="关闭">×</button></div>
         <form id="memoryForm" class="memory-form">
           <input type="hidden" name="id" />
-          <label>记忆内容<textarea name="content" rows="3" placeholder="写下需要记忆的知识点、口诀或问题" required></textarea></label>
-          <label>答案 / 解释<textarea name="answer" rows="3" placeholder="可不填写，不填写就是无答案卡片"></textarea></label>
+          <label>记忆内容<textarea name="content" rows="3" placeholder="写下需要记忆的知识点、口诀或问题"></textarea></label>
+          <label>记忆内容图片<input name="contentImageFile" type="file" accept="image/*" /></label>
+          <input type="hidden" name="contentImage" />
+          <label>答案 / 解释<textarea name="answer" rows="3" placeholder="可不填写，也可以只上传答案图片"></textarea></label>
+          <label>答案图片<input name="answerImageFile" type="file" accept="image/*" /></label>
+          <input type="hidden" name="answerImage" />
           <div class="memory-form-actions"><span>答案默认隐藏，保存后点击卡片查看</span><button class="save-btn" type="submit">保存记忆</button></div>
         </form>
         <div class="memory-toolbar"><b>我的记忆</b><span id="memoryCount">0 条</span></div>
@@ -88,6 +92,6 @@
     <div class="toast" id="toast" role="status"></div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=visual-2"></script>
-    <script src="app.js?v=memory-simple-1"></script>
+    <script src="app.js?v=memory-image-1"></script>
   </body>
 </html>
