@@ -71,6 +71,7 @@ function compressImage(file) {
 function resetMemoryForm() {
   memoryForm.reset();
   memoryForm.elements.id.value = '';
+  memoryForm.querySelectorAll('[data-upload-name]').forEach((node) => { node.textContent = '未选择'; });
 }
 
 function renderMemoryList() {
@@ -370,6 +371,7 @@ memoryForm.addEventListener('submit', async (event) => {
   saveMemoryLocal(); renderMemoryList(); resetMemoryForm(); showToast(isEdit ? '记忆已修改' : '记忆已保存');
   try { if (isEdit) await updateMemoryCloud(item); else { const created = await saveMemoryCloud(item); if (created?.id) { const saved = memoryRecords.find((card) => card.id === item.id); if (saved) saved.id = `cloud-${created.id}`; saveMemoryLocal(); renderMemoryList(); } } } catch { showToast('已保存本机，云端同步稍后重试'); }
 });
+memoryForm.querySelectorAll('input[type="file"]').forEach((input) => input.addEventListener('change', () => { const name = memoryForm.querySelector(`[data-upload-name="${input.name}"]`); if (name) name.textContent = input.files[0]?.name || '未选择'; }));
 document.querySelector('#quickAdd').addEventListener('click', () => { resetForm(); form.scrollIntoView({ behavior: 'smooth', block: 'start' }); form.elements.type.focus(); });
 recordsEl.addEventListener('click', (event) => {
   const edit = event.target.closest('[data-edit]');
