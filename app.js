@@ -61,12 +61,11 @@ function saveMemoryLocal() { localStorage.setItem(MEMORY_STORAGE_KEY, JSON.strin
 function resetMemoryForm() {
   memoryForm.reset();
   memoryForm.elements.id.value = '';
-  memoryForm.elements.date.value = today();
 }
 
 function renderMemoryList() {
   document.querySelector('#memoryCount').textContent = `${memoryRecords.length} 条`;
-  memoryList.innerHTML = [...memoryRecords].sort((a, b) => `${b.date}-${b.id}`.localeCompare(`${a.date}-${a.id}`)).map((item) => `<article class="memory-card"><div class="memory-card-head"><span>${moneyDate(item.date)} · ${escapeHtml(item.category)}</span><div><button type="button" data-memory-edit="${item.id}">编辑</button><button type="button" data-memory-delete="${item.id}">删除</button></div></div><h3>${escapeHtml(item.content)}</h3>${item.answer ? `<button class="answer-toggle" type="button" data-answer-toggle="${item.id}">显示答案</button><p class="memory-answer" data-answer="${item.id}" hidden>${escapeHtml(item.answer)}</p>` : '<small class="no-answer">这是一张无答案记忆卡</small>'}</article>`).join('') || '<div class="memory-empty">还没有记忆内容，先添加一张卡片吧。</div>';
+  memoryList.innerHTML = [...memoryRecords].sort((a, b) => `${b.date}-${b.id}`.localeCompare(`${a.date}-${a.id}`)).map((item) => `<article class="memory-card"><div class="memory-card-head"><span>记忆卡片</span><div><button type="button" data-memory-edit="${item.id}">编辑</button><button type="button" data-memory-delete="${item.id}">删除</button></div></div><h3>${escapeHtml(item.content)}</h3>${item.answer ? `<button class="answer-toggle" type="button" data-answer-toggle="${item.id}">显示答案</button><p class="memory-answer" data-answer="${item.id}" hidden>${escapeHtml(item.answer)}</p>` : '<small class="no-answer">这是一张无答案记忆卡</small>'}</article>`).join('') || '<div class="memory-empty">还没有记忆内容，先添加一张卡片吧。</div>';
 }
 
 async function loadMemoryCards() {
@@ -350,8 +349,8 @@ memoryList.addEventListener('click', (event) => {
 memoryForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   const data = new FormData(memoryForm);
-  const item = { id: data.get('id') || `${Date.now()}`, date: data.get('date'), category: data.get('category').trim(), content: data.get('content').trim(), answer: data.get('answer').trim() };
-  if (!item.date || !item.category || !item.content) return showToast('请填写日期、分类和记忆内容');
+  const item = { id: data.get('id') || `${Date.now()}`, date: today(), category: '记忆', content: data.get('content').trim(), answer: data.get('answer').trim() };
+  if (!item.content) return showToast('请填写记忆内容');
   const index = memoryRecords.findIndex((card) => card.id === item.id);
   const isEdit = index >= 0;
   if (isEdit) memoryRecords[index] = item; else memoryRecords.push(item);
