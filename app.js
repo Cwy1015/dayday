@@ -77,7 +77,7 @@ function resetMemoryForm() {
 
 function renderMemoryList() {
   document.querySelector('#memoryCount').textContent = `${memoryRecords.length} 条`;
-  memoryList.innerHTML = [...memoryRecords].sort((a, b) => `${b.date}-${b.id}`.localeCompare(`${a.date}-${a.id}`)).map((item) => { const content = item.content ? `<h3>${escapeHtml(item.content)}</h3>` : ''; const contentImage = item.contentImage ? `<img class="memory-image" src="${item.contentImage}" alt="记忆内容图片" />` : ''; const answer = item.answer || item.answerImage; return `<article class="memory-card"><div class="memory-card-head"><span>记忆卡片</span><div><button type="button" data-memory-edit="${item.id}">编辑</button><button type="button" data-memory-delete="${item.id}">删除</button></div></div>${content}${contentImage}${answer ? `<button class="answer-toggle" type="button" data-answer-toggle="${item.id}">显示答案</button><div class="memory-answer" data-answer="${item.id}" hidden>${item.answer ? `<p>${escapeHtml(item.answer)}</p>` : ''}${item.answerImage ? `<img class="memory-image" src="${item.answerImage}" alt="答案图片" />` : ''}</div>` : '<small class="no-answer">这是一张无答案记忆卡</small>'}</article>`; }).join('') || '<div class="memory-empty">还没有记忆内容，先添加一张卡片吧。</div>';
+  memoryList.innerHTML = [...memoryRecords].sort((a, b) => String(a.createdAt || `${a.date || ''}-${a.id}`).localeCompare(String(b.createdAt || `${b.date || ''}-${b.id}`))).map((item) => { const content = item.content ? `<h3>${escapeHtml(item.content)}</h3>` : ''; const contentImage = item.contentImage ? `<img class="memory-image" src="${item.contentImage}" alt="记忆内容图片" />` : ''; const answer = item.answer || item.answerImage; return `<article class="memory-card"><div class="memory-card-head"><span>记忆卡片</span><div><button type="button" data-memory-edit="${item.id}">编辑</button><button type="button" data-memory-delete="${item.id}">删除</button></div></div>${content}${contentImage}${answer ? `<button class="answer-toggle" type="button" data-answer-toggle="${item.id}">显示答案</button><div class="memory-answer" data-answer="${item.id}" hidden>${item.answer ? `<p>${escapeHtml(item.answer)}</p>` : ''}${item.answerImage ? `<img class="memory-image" src="${item.answerImage}" alt="答案图片" />` : ''}</div>` : '<small class="no-answer">这是一张无答案记忆卡</small>'}</article>`; }).join('') || '<div class="memory-empty">还没有记忆内容，先添加一张卡片吧。</div>';
 }
 
 async function loadMemoryCards() {
@@ -85,7 +85,7 @@ async function loadMemoryCards() {
   try { data = await restRequest('memory_cards?select=id,card_date,category,content,answer,content_image,answer_image,created_at&order=card_date.desc,created_at.desc'); }
   catch { return; }
   if (!data) return;
-  const cloudCards = data.map((item) => ({ id: `cloud-${item.id}`, date: item.card_date, category: item.category, content: item.content || '', answer: item.answer || '', contentImage: item.content_image || '', answerImage: item.answer_image || '' }));
+  const cloudCards = data.map((item) => ({ id: `cloud-${item.id}`, date: item.card_date, category: item.category, content: item.content || '', answer: item.answer || '', contentImage: item.content_image || '', answerImage: item.answer_image || '', createdAt: item.created_at || '' }));
   const localOnly = memoryRecords.filter((local) => !cloudCards.some((cloud) => cloud.date === local.date && cloud.category === local.category && cloud.content === local.content));
   memoryRecords = [...cloudCards, ...localOnly];
   saveMemoryLocal();
@@ -370,13 +370,14 @@ memoryForm.addEventListener('submit', async (event) => {
     const data = new FormData(memoryForm);
     const contentImage = await compressImage(data.get('contentImageFile'));
     const answerImage = await compressImage(data.get('answerImageFile'));
-    const item = { id: data.get('id') || `${Date.now()}`, date: today(), category: '记忆', content: data.get('content').trim(), answer: data.get('answer').trim(), contentImage: contentImage || data.get('contentImage') || '', answerImage: answerImage || data.get('answerImage') || '' };
+  const existing = memoryRecords.find((card) => card.id === data.get('id'));
+  const item = { id: data.get('id') || `${Date.now()}`, date: today(), category: '记忆', content: data.get('content').trim(), answer: data.get('answer').trim(), contentImage: contentImage || data.get('contentImage') || '', answerImage: answerImage || data.get('answerImage') || '', createdAt: existing?.createdAt || new Date().toISOString() };
     if (!item.content && !item.contentImage) return showToast('请填写记忆内容或上传内容图片');
     const index = memoryRecords.findIndex((card) => card.id === item.id);
     const isEdit = index >= 0;
     if (isEdit) memoryRecords[index] = item; else memoryRecords.push(item);
     saveMemoryLocal(); renderMemoryList(); resetMemoryForm(); showToast(isEdit ? '记忆已修改' : '记忆已保存');
-    try { if (isEdit) await updateMemoryCloud(item); else { const created = await saveMemoryCloud(item); if (created?.id) { const saved = memoryRecords.find((card) => card.id === item.id); if (saved) saved.id = `cloud-${created.id}`; saveMemoryLocal(); renderMemoryList(); } } } catch { showToast('已保存本机，云端同步稍后重试'); }
+    try { if (isEdit) await updateMemoryCloud(item); else { const created = await saveMemoryCloud(item); if (created?.id) { const saved = memoryRecords.find((card) => card.id === item.id); if (saved) { saved.id = `cloud-${created.id}`; saved.createdAt = created.created_at || saved.createdAt; } saveMemoryLocal(); renderMemoryList(); } } } catch { showToast('已保存本机，云端同步稍后重试'); }
   } catch { showToast('图片读取失败，请重新选择图片'); }
   finally { saveButton.disabled = false; saveButton.textContent = '保存记忆'; }
 });
