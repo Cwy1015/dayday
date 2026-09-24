@@ -13,6 +13,7 @@ const toast = document.querySelector('#toast');
 const authButton = document.querySelector('[data-action="sync"]');
 const syncStatus = document.querySelector('#syncStatus');
 const memoryModal = document.querySelector('#memoryModal');
+const memoryLibraryModal = document.querySelector('#memoryLibraryModal');
 const memoryForm = document.querySelector('#memoryForm');
 const memoryList = document.querySelector('#memoryList');
 let records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
@@ -346,9 +347,12 @@ function filterByType(type) { categoryFilter = type; document.querySelector('#se
 document.querySelector('#categoryFilters').addEventListener('click', (event) => { const button = event.target.closest('[data-category]'); if (!button) return; categoryFilter = button.dataset.category; renderRecords(); });
 document.querySelector('#clearFilters').addEventListener('click', () => { categoryFilter = 'all'; document.querySelector('#searchInput').value = ''; document.querySelector('#dateFilter').value = ''; renderRecords(); });
 document.querySelector('#retrySync').addEventListener('click', syncCloud);
-document.querySelector('#openMemory').addEventListener('click', () => { memoryModal.hidden = false; resetMemoryForm(); renderMemoryList(); });
+document.querySelector('#openMemory').addEventListener('click', () => { memoryModal.hidden = false; resetMemoryForm(); });
+document.querySelector('#openMemoryLibrary').addEventListener('click', () => { memoryLibraryModal.hidden = false; renderMemoryList(); });
 document.querySelector('#closeMemory').addEventListener('click', () => { memoryModal.hidden = true; });
+document.querySelector('#closeMemoryLibrary').addEventListener('click', () => { memoryLibraryModal.hidden = true; });
 memoryModal.addEventListener('click', (event) => { if (event.target === memoryModal) memoryModal.hidden = true; });
+memoryLibraryModal.addEventListener('click', (event) => { if (event.target === memoryLibraryModal) memoryLibraryModal.hidden = true; });
 memoryList.addEventListener('click', (event) => {
   const toggle = event.target.closest('[data-answer-toggle]');
   if (toggle) { const answer = memoryList.querySelector(`[data-answer="${toggle.dataset.answerToggle}"]`); answer.hidden = !answer.hidden; toggle.textContent = answer.hidden ? '显示答案' : '隐藏答案'; return; }
