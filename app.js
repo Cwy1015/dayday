@@ -75,9 +75,15 @@ function resetMemoryForm() {
   memoryForm.querySelectorAll('[data-upload-name]').forEach((node) => { node.textContent = '未选择'; });
 }
 
+function memoryOrderValue(item) {
+  if (item.createdAt) { const time = Date.parse(item.createdAt); if (!Number.isNaN(time)) return time; }
+  if (String(item.id).startsWith('cloud-')) return Number(String(item.id).slice(6)) || 0;
+  return Number(item.id) || 0;
+}
+
 function renderMemoryList() {
   document.querySelector('#memoryCount').textContent = `${memoryRecords.length} 条`;
-  memoryList.innerHTML = [...memoryRecords].sort((a, b) => String(a.createdAt || `${a.date || ''}-${a.id}`).localeCompare(String(b.createdAt || `${b.date || ''}-${b.id}`))).map((item) => { const content = item.content ? `<h3>${escapeHtml(item.content)}</h3>` : ''; const contentImage = item.contentImage ? `<img class="memory-image" src="${item.contentImage}" alt="记忆内容图片" />` : ''; const answer = item.answer || item.answerImage; return `<article class="memory-card"><div class="memory-card-head"><span>记忆卡片</span><div><button type="button" data-memory-edit="${item.id}">编辑</button><button type="button" data-memory-delete="${item.id}">删除</button></div></div>${content}${contentImage}${answer ? `<button class="answer-toggle" type="button" data-answer-toggle="${item.id}">显示答案</button><div class="memory-answer" data-answer="${item.id}" hidden>${item.answer ? `<p>${escapeHtml(item.answer)}</p>` : ''}${item.answerImage ? `<img class="memory-image" src="${item.answerImage}" alt="答案图片" />` : ''}</div>` : '<small class="no-answer">这是一张无答案记忆卡</small>'}</article>`; }).join('') || '<div class="memory-empty">还没有记忆内容，先添加一张卡片吧。</div>';
+  memoryList.innerHTML = [...memoryRecords].sort((a, b) => memoryOrderValue(a) - memoryOrderValue(b)).map((item) => { const content = item.content ? `<h3>${escapeHtml(item.content)}</h3>` : ''; const contentImage = item.contentImage ? `<img class="memory-image" src="${item.contentImage}" alt="记忆内容图片" />` : ''; const answer = item.answer || item.answerImage; return `<article class="memory-card"><div class="memory-card-head"><span>记忆卡片</span><div><button type="button" data-memory-edit="${item.id}">编辑</button><button type="button" data-memory-delete="${item.id}">删除</button></div></div>${content}${contentImage}${answer ? `<button class="answer-toggle" type="button" data-answer-toggle="${item.id}">显示答案</button><div class="memory-answer" data-answer="${item.id}" hidden>${item.answer ? `<p>${escapeHtml(item.answer)}</p>` : ''}${item.answerImage ? `<img class="memory-image" src="${item.answerImage}" alt="答案图片" />` : ''}</div>` : '<small class="no-answer">这是一张无答案记忆卡</small>'}</article>`; }).join('') || '<div class="memory-empty">还没有记忆内容，先添加一张卡片吧。</div>';
 }
 
 async function loadMemoryCards() {
@@ -93,7 +99,7 @@ async function loadMemoryCards() {
 }
 
 async function saveMemoryCloud(item) {
-  const data = await restRequest('memory_cards', { method: 'POST', body: JSON.stringify({ card_date: item.date, category: item.category, content: item.content || '', answer: item.answer || null, content_image: item.contentImage || null, answer_image: item.answerImage || null }) });
+  const data = await restRequest('memory_cards', { method: 'POST', body: JSON.stringify({ card_date: item.date, category: item.category, content: item.content || '', answer: item.answer || null, content_image: item.contentImage || null, answer_image: item.answerImage || null, created_at: item.createdAt }) });
   return data?.[0];
 }
 
