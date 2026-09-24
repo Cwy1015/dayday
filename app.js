@@ -60,7 +60,7 @@ function saveMemoryLocal() { localStorage.setItem(MEMORY_STORAGE_KEY, JSON.strin
 
 function compressImage(file) {
   return new Promise((resolve, reject) => {
-    if (!file) return resolve('');
+    if (!file || !file.size) return resolve('');
     const reader = new FileReader();
     reader.onload = () => { const image = new Image(); image.onload = () => { const scale = Math.min(1, 1200 / Math.max(image.width, image.height)); const canvas = document.createElement('canvas'); canvas.width = Math.max(1, Math.round(image.width * scale)); canvas.height = Math.max(1, Math.round(image.height * scale)); canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height); resolve(canvas.toDataURL('image/jpeg', .78)); }; image.onerror = reject; image.src = reader.result; };
     reader.onerror = reject;
@@ -359,17 +359,22 @@ memoryList.addEventListener('click', (event) => {
 });
 memoryForm.addEventListener('submit', async (event) => {
   event.preventDefault();
-  const data = new FormData(memoryForm);
-  const contentImage = await compressImage(data.get('contentImageFile'));
-  const answerImage = await compressImage(data.get('answerImageFile'));
-  const item = { id: data.get('id') || `${Date.now()}`, date: today(), category: '记忆', content: data.get('content').trim(), answer: data.get('answer').trim(), contentImage: contentImage || data.get('contentImage') || '', answerImage: answerImage || data.get('answerImage') || '' };
-  if (!item.content && !item.contentImage) return showToast('请填写记忆内容或上传内容图片');
-  if (!item.answer && !item.answerImage) item.answer = '';
-  const index = memoryRecords.findIndex((card) => card.id === item.id);
-  const isEdit = index >= 0;
-  if (isEdit) memoryRecords[index] = item; else memoryRecords.push(item);
-  saveMemoryLocal(); renderMemoryList(); resetMemoryForm(); showToast(isEdit ? '记忆已修改' : '记忆已保存');
-  try { if (isEdit) await updateMemoryCloud(item); else { const created = await saveMemoryCloud(item); if (created?.id) { const saved = memoryRecords.find((card) => card.id === item.id); if (saved) saved.id = `cloud-${created.id}`; saveMemoryLocal(); renderMemoryList(); } } } catch { showToast('已保存本机，云端同步稍后重试'); }
+  const saveButton = memoryForm.querySelector('button[type="submit"]');
+  saveButton.disabled = true;
+  saveButton.textContent = '保存中...';
+  try {
+    const data = new FormData(memoryForm);
+    const contentImage = await compressImage(data.get('contentImageFile'));
+    const answerImage = await compressImage(data.get('answerImageFile'));
+    const item = { id: data.get('id') || `${Date.now()}`, date: today(), category: '记忆', content: data.get('content').trim(), answer: data.get('answer').trim(), contentImage: contentImage || data.get('contentImage') || '', answerImage: answerImage || data.get('answerImage') || '' };
+    if (!item.content && !item.contentImage) return showToast('请填写记忆内容或上传内容图片');
+    const index = memoryRecords.findIndex((card) => card.id === item.id);
+    const isEdit = index >= 0;
+    if (isEdit) memoryRecords[index] = item; else memoryRecords.push(item);
+    saveMemoryLocal(); renderMemoryList(); resetMemoryForm(); showToast(isEdit ? '记忆已修改' : '记忆已保存');
+    try { if (isEdit) await updateMemoryCloud(item); else { const created = await saveMemoryCloud(item); if (created?.id) { const saved = memoryRecords.find((card) => card.id === item.id); if (saved) saved.id = `cloud-${created.id}`; saveMemoryLocal(); renderMemoryList(); } } } catch { showToast('已保存本机，云端同步稍后重试'); }
+  } catch { showToast('图片读取失败，请重新选择图片'); }
+  finally { saveButton.disabled = false; saveButton.textContent = '保存记忆'; }
 });
 memoryForm.querySelectorAll('input[type="file"]').forEach((input) => input.addEventListener('change', () => { const name = memoryForm.querySelector(`[data-upload-name="${input.name}"]`); if (name) name.textContent = input.files[0]?.name || '未选择'; }));
 document.querySelector('#quickAdd').addEventListener('click', () => { resetForm(); form.scrollIntoView({ behavior: 'smooth', block: 'start' }); form.elements.type.focus(); });
