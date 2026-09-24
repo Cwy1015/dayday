@@ -1,4 +1,5 @@
 const STORAGE_KEY = 'daily-practice-records';
+const MEMORY_STORAGE_KEY = 'daily-memory-cards';
 const ACCESS_CODE = 'ccday-7m4k2p';
 const accessValue = window.location.hash.replace(/^#\/?/, '').split('?')[0].trim();
 const hasAccess = accessValue === ACCESS_CODE;
@@ -11,7 +12,11 @@ const emptyEl = document.querySelector('#emptyDaily');
 const toast = document.querySelector('#toast');
 const authButton = document.querySelector('[data-action="sync"]');
 const syncStatus = document.querySelector('#syncStatus');
+const memoryModal = document.querySelector('#memoryModal');
+const memoryForm = document.querySelector('#memoryForm');
+const memoryList = document.querySelector('#memoryList');
 let records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+let memoryRecords = JSON.parse(localStorage.getItem(MEMORY_STORAGE_KEY) || '[]');
 let cloudReady = Boolean(supabaseClient);
 let calendarMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 let categoryFilter = 'all';
@@ -51,6 +56,45 @@ function showToast(message) {
 }
 
 function saveLocal() { localStorage.setItem(STORAGE_KEY, JSON.stringify(records)); }
+function saveMemoryLocal() { localStorage.setItem(MEMORY_STORAGE_KEY, JSON.stringify(memoryRecords)); }
+
+function resetMemoryForm() {
+  memoryForm.reset();
+  memoryForm.elements.id.value = '';
+  memoryForm.elements.date.value = today();
+}
+
+function renderMemoryList() {
+  document.querySelector('#memoryCount').textContent = `${memoryRecords.length} 条`;
+  memoryList.innerHTML = [...memoryRecords].sort((a, b) => `${b.date}-${b.id}`.localeCompare(`${a.date}-${a.id}`)).map((item) => `<article class="memory-card"><div class="memory-card-head"><span>${moneyDate(item.date)} · ${escapeHtml(item.category)}</span><div><button type="button" data-memory-edit="${item.id}">编辑</button><button type="button" data-memory-delete="${item.id}">删除</button></div></div><h3>${escapeHtml(item.content)}</h3>${item.answer ? `<button class="answer-toggle" type="button" data-answer-toggle="${item.id}">显示答案</button><p class="memory-answer" data-answer="${item.id}" hidden>${escapeHtml(item.answer)}</p>` : '<small class="no-answer">这是一张无答案记忆卡</small>'}</article>`).join('') || '<div class="memory-empty">还没有记忆内容，先添加一张卡片吧。</div>';
+}
+
+async function loadMemoryCards() {
+  let data;
+  try { data = await restRequest('memory_cards?select=id,card_date,category,content,answer,created_at&order=card_date.desc,created_at.desc'); }
+  catch { return; }
+  if (!data) return;
+  const cloudCards = data.map((item) => ({ id: `cloud-${item.id}`, date: item.card_date, category: item.category, content: item.content, answer: item.answer || '' }));
+  const localOnly = memoryRecords.filter((local) => !cloudCards.some((cloud) => cloud.date === local.date && cloud.category === local.category && cloud.content === local.content));
+  memoryRecords = [...cloudCards, ...localOnly];
+  saveMemoryLocal();
+  renderMemoryList();
+}
+
+async function saveMemoryCloud(item) {
+  const data = await restRequest('memory_cards', { method: 'POST', body: JSON.stringify({ card_date: item.date, category: item.category, content: item.content, answer: item.answer || null }) });
+  return data?.[0];
+}
+
+async function updateMemoryCloud(item) {
+  if (!item.id.startsWith('cloud-')) return;
+  await restRequest(`memory_cards?id=eq.${encodeURIComponent(item.id.slice(6))}`, { method: 'PATCH', body: JSON.stringify({ card_date: item.date, category: item.category, content: item.content, answer: item.answer || null }) });
+}
+
+async function deleteMemoryCloud(item) {
+  if (!item.id.startsWith('cloud-')) return;
+  await restRequest(`memory_cards?id=eq.${encodeURIComponent(item.id.slice(6))}`, { method: 'DELETE' });
+}
 
 function updateWrong() {
   const total = number(form.elements.total.value);
@@ -292,6 +336,28 @@ function filterByType(type) { categoryFilter = type; document.querySelector('#se
 document.querySelector('#categoryFilters').addEventListener('click', (event) => { const button = event.target.closest('[data-category]'); if (!button) return; categoryFilter = button.dataset.category; renderRecords(); });
 document.querySelector('#clearFilters').addEventListener('click', () => { categoryFilter = 'all'; document.querySelector('#searchInput').value = ''; document.querySelector('#dateFilter').value = ''; renderRecords(); });
 document.querySelector('#retrySync').addEventListener('click', syncCloud);
+document.querySelector('#openMemory').addEventListener('click', () => { memoryModal.hidden = false; resetMemoryForm(); renderMemoryList(); });
+document.querySelector('#closeMemory').addEventListener('click', () => { memoryModal.hidden = true; });
+memoryModal.addEventListener('click', (event) => { if (event.target === memoryModal) memoryModal.hidden = true; });
+memoryList.addEventListener('click', (event) => {
+  const toggle = event.target.closest('[data-answer-toggle]');
+  if (toggle) { const answer = memoryList.querySelector(`[data-answer="${toggle.dataset.answerToggle}"]`); answer.hidden = !answer.hidden; toggle.textContent = answer.hidden ? '显示答案' : '隐藏答案'; return; }
+  const edit = event.target.closest('[data-memory-edit]');
+  if (edit) { const item = memoryRecords.find((card) => card.id === edit.dataset.memoryEdit); if (!item) return; Object.entries(item).forEach(([key, value]) => { if (memoryForm.elements[key]) memoryForm.elements[key].value = value; }); memoryForm.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+  const remove = event.target.closest('[data-memory-delete]');
+  if (remove) { const item = memoryRecords.find((card) => card.id === remove.dataset.memoryDelete); if (!item || !window.confirm('确定删除这张记忆卡吗？')) return; memoryRecords = memoryRecords.filter((card) => card.id !== item.id); saveMemoryLocal(); renderMemoryList(); deleteMemoryCloud(item).catch(() => showToast('已删除本机，云端删除稍后重试')); }
+});
+memoryForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const data = new FormData(memoryForm);
+  const item = { id: data.get('id') || `${Date.now()}`, date: data.get('date'), category: data.get('category').trim(), content: data.get('content').trim(), answer: data.get('answer').trim() };
+  if (!item.date || !item.category || !item.content) return showToast('请填写日期、分类和记忆内容');
+  const index = memoryRecords.findIndex((card) => card.id === item.id);
+  const isEdit = index >= 0;
+  if (isEdit) memoryRecords[index] = item; else memoryRecords.push(item);
+  saveMemoryLocal(); renderMemoryList(); resetMemoryForm(); showToast(isEdit ? '记忆已修改' : '记忆已保存');
+  try { if (isEdit) await updateMemoryCloud(item); else { const created = await saveMemoryCloud(item); if (created?.id) { const saved = memoryRecords.find((card) => card.id === item.id); if (saved) saved.id = `cloud-${created.id}`; saveMemoryLocal(); renderMemoryList(); } } } catch { showToast('已保存本机，云端同步稍后重试'); }
+});
 document.querySelector('#quickAdd').addEventListener('click', () => { resetForm(); form.scrollIntoView({ behavior: 'smooth', block: 'start' }); form.elements.type.focus(); });
 recordsEl.addEventListener('click', (event) => {
   const edit = event.target.closest('[data-edit]');
@@ -311,6 +377,7 @@ async function syncCloud() {
   syncStatus.textContent = '正在同步...';
   await syncLocalRecords();
   await loadCloudRecords();
+  await loadMemoryCards();
   syncStatus.textContent = cloudReady ? '已自动同步云端' : '云端策略未开启';
   showToast(cloudReady ? '云端同步完成' : '请先执行同步策略 SQL');
 }
