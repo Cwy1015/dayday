@@ -18,6 +18,7 @@ const memoryForm = document.querySelector('#memoryForm');
 const memoryList = document.querySelector('#memoryList');
 let records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 let memoryRecords = JSON.parse(localStorage.getItem(MEMORY_STORAGE_KEY) || '[]');
+let editingMemory = false;
 let cloudReady = Boolean(supabaseClient);
 let calendarMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 let categoryFilter = 'all';
@@ -359,7 +360,7 @@ function filterByType(type) { categoryFilter = type; document.querySelector('#se
 document.querySelector('#categoryFilters').addEventListener('click', (event) => { const button = event.target.closest('[data-category]'); if (!button) return; categoryFilter = button.dataset.category; renderRecords(); });
 document.querySelector('#clearFilters').addEventListener('click', () => { categoryFilter = 'all'; document.querySelector('#searchInput').value = ''; document.querySelector('#dateFilter').value = ''; renderRecords(); });
 document.querySelector('#retrySync').addEventListener('click', syncCloud);
-document.querySelector('#openMemory').addEventListener('click', () => { setMemoryModal(memoryModal, true); resetMemoryForm(); });
+document.querySelector('#openMemory').addEventListener('click', () => { editingMemory = false; setMemoryModal(memoryModal, true); resetMemoryForm(); });
 document.querySelector('#openMemoryLibrary').addEventListener('click', () => { setMemoryModal(memoryLibraryModal, true); renderMemoryList(); });
 document.querySelector('#closeMemory').addEventListener('click', () => { setMemoryModal(memoryModal, false); });
 document.querySelector('#closeMemoryLibrary').addEventListener('click', () => { setMemoryModal(memoryLibraryModal, false); });
@@ -370,7 +371,7 @@ memoryList.addEventListener('click', (event) => {
   const card = event.target.closest('[data-memory-card]');
   if (toggle || (card && !event.target.closest('[data-memory-edit],[data-memory-delete]'))) { const id = toggle?.dataset.answerToggle || card.dataset.memoryCard; const answer = memoryList.querySelector(`[data-answer="${id}"]`); if (!answer) return; answer.hidden = !answer.hidden; const button = memoryList.querySelector(`[data-answer-toggle="${id}"]`); if (button) button.textContent = answer.hidden ? '显示答案' : '隐藏答案'; return; }
   const edit = event.target.closest('[data-memory-edit]');
-  if (edit) { const item = memoryRecords.find((card) => card.id === edit.dataset.memoryEdit); if (!item) return; setMemoryModal(memoryLibraryModal, false); setMemoryModal(memoryModal, true); Object.entries(item).forEach(([key, value]) => { if (memoryForm.elements[key] && !String(key).endsWith('File')) memoryForm.elements[key].value = value; }); memoryForm.querySelectorAll('[data-upload-name]').forEach((node) => { node.textContent = '原图片已保留'; }); memoryForm.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+  if (edit) { const item = memoryRecords.find((card) => card.id === edit.dataset.memoryEdit); if (!item) return; editingMemory = true; setMemoryModal(memoryLibraryModal, false); setMemoryModal(memoryModal, true); Object.entries(item).forEach(([key, value]) => { if (memoryForm.elements[key] && !String(key).endsWith('File')) memoryForm.elements[key].value = value; }); memoryForm.querySelectorAll('[data-upload-name]').forEach((node) => { node.textContent = '原图片已保留'; }); memoryForm.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
   const remove = event.target.closest('[data-memory-delete]');
   if (remove) { const item = memoryRecords.find((card) => card.id === remove.dataset.memoryDelete); if (!item || !window.confirm('确定删除这张记忆卡吗？')) return; memoryRecords = memoryRecords.filter((card) => card.id !== item.id); saveMemoryLocal(); renderMemoryList(); deleteMemoryCloud(item).catch(() => showToast('已删除本机，云端删除稍后重试')); }
 });
@@ -389,7 +390,8 @@ memoryForm.addEventListener('submit', async (event) => {
     const index = memoryRecords.findIndex((card) => card.id === item.id);
     const isEdit = index >= 0;
     if (isEdit) memoryRecords[index] = item; else memoryRecords.push(item);
-    saveMemoryLocal(); renderMemoryList(); resetMemoryForm(); showToast(isEdit ? '记忆已修改' : '记忆已保存');
+    saveMemoryLocal(); renderMemoryList(); resetMemoryForm();
+    if (isEdit || editingMemory) { editingMemory = false; setMemoryModal(memoryModal, false); setMemoryModal(memoryLibraryModal, true); renderMemoryList(); showToast('记忆已修改'); } else { showToast('记忆已保存'); }
     try { if (isEdit) await updateMemoryCloud(item); else { const created = await saveMemoryCloud(item); if (created?.id) { const saved = memoryRecords.find((card) => card.id === item.id); if (saved) { saved.id = `cloud-${created.id}`; saved.createdAt = created.created_at || saved.createdAt; } saveMemoryLocal(); renderMemoryList(); } } } catch { showToast('已保存本机，云端同步稍后重试'); }
   } catch { showToast('图片读取失败，请重新选择图片'); }
   finally { saveButton.disabled = false; saveButton.textContent = '保存记忆'; }
