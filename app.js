@@ -177,14 +177,9 @@ function renderDayDetail(date) {
 }
 
 function renderAnalysis() {
-  const typeMap = records.reduce((map, item) => { const row = map[item.type] || { total: 0, correct: 0, minutes: 0, errors: {} }; row.total += item.total; row.correct += item.correct; row.minutes += item.minutes; String(item.errorType || '').split(/[、,，/]/).map((value) => value.trim()).filter(Boolean).forEach((error) => { row.errors[error] = (row.errors[error] || 0) + item.wrong; }); map[item.type] = row; return map; }, {});
-  const types = Object.entries(typeMap).map(([type, value]) => ({ type, ...value, accuracy: value.correct / value.total * 100, speed: value.minutes / value.total, errorTypes: Object.entries(value.errors).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([name, count]) => `${name} ${count}次`).join(' · ') })).sort((a, b) => b.total - a.total);
-  document.querySelector('#typeDashboard').innerHTML = types.length ? types.map((item) => { const level = item.accuracy >= 80 ? 'strong' : item.accuracy >= 60 ? 'steady' : 'weak'; return `<button class="type-dashboard-card ${level}" data-type-filter="${escapeHtml(item.type)}" type="button"><div class="type-dashboard-head"><strong>${escapeHtml(item.type)}</strong><b>${item.accuracy.toFixed(1)}%</b></div><div class="type-dashboard-track"><i style="width:${item.accuracy}%"></i></div><div class="type-dashboard-metrics"><span class="metric-total"><b>${item.total}</b>题</span><span class="metric-correct"><b>${item.correct}</b>对</span><span class="metric-wrong"><b>${item.total - item.correct}</b>错</span><span class="metric-time"><b>${item.minutes}</b>分钟</span><span class="metric-speed"><b>${item.speed.toFixed(2)}</b>分/题</span></div><small class="type-dashboard-errors">${item.errorTypes || '暂未填写错误类型'}</small></button>`; }).join('') : '<span class="required-note">填写记录后显示题型详细数据</span>';
-  const errorMap = records.reduce((map, item) => { String(item.errorType || '').split(/[、,，/]/).map((value) => value.trim()).filter(Boolean).forEach((type) => { map[type] = (map[type] || 0) + item.wrong; }); return map; }, {});
-  const errors = Object.entries(errorMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
-  const errorMax = Math.max(...errors.map((item) => item[1]), 1);
-  document.querySelector('#errorTotal').textContent = `${errors.reduce((sum, item) => sum + item[1], 0)} 次`;
-  document.querySelector('#errorBars').innerHTML = errors.length ? errors.map(([type, count]) => `<div class="error-row"><span title="${escapeHtml(type)}">${escapeHtml(type)}</span><i><b style="width:${count / errorMax * 100}%"></b></i><span>${count}</span></div>`).join('') : '<span class="required-note">填写错误类型后显示分布</span>';
+  const typeMap = records.reduce((map, item) => { const row = map[item.type] || { total: 0, correct: 0, minutes: 0 }; row.total += item.total; row.correct += item.correct; row.minutes += item.minutes; map[item.type] = row; return map; }, {});
+  const types = Object.entries(typeMap).map(([type, value]) => ({ type, ...value, accuracy: value.correct / value.total * 100, speed: value.minutes / value.total })).sort((a, b) => b.total - a.total);
+  document.querySelector('#typeDashboard').innerHTML = types.length ? types.map((item) => { const level = item.accuracy >= 80 ? 'strong' : item.accuracy >= 60 ? 'steady' : 'weak'; return `<button class="type-dashboard-card ${level}" data-type-filter="${escapeHtml(item.type)}" type="button"><div class="type-dashboard-head"><strong>${escapeHtml(item.type)}</strong><b>${item.accuracy.toFixed(1)}%</b></div><div class="type-dashboard-track"><i style="width:${item.accuracy}%"></i></div><div class="type-dashboard-metrics"><span class="metric-total"><b>${item.total}</b>题</span><span class="metric-correct"><b>${item.correct}</b>对</span><span class="metric-wrong"><b>${item.total - item.correct}</b>错</span><span class="metric-time"><b>${item.minutes}</b>分钟</span><span class="metric-speed"><b>${item.speed.toFixed(2)}</b>分/题</span></div></button>`; }).join('') : '<span class="required-note">填写记录后显示题型详细数据</span>';
 }
 
 function renderInsights(total, correct) {
@@ -221,7 +216,7 @@ function filteredRecords() {
   const search = document.querySelector('#searchInput').value.trim().toLowerCase();
   const date = document.querySelector('#dateFilter').value;
   return [...records].filter((item) => {
-    const matchesSearch = !search || `${item.type} ${item.note}`.toLowerCase().includes(search);
+    const matchesSearch = !search || String(item.type || '').toLowerCase().includes(search);
     return matchesSearch && (!date || item.date === date) && (categoryFilter === 'all' || item.type === categoryFilter);
   }).sort((a, b) => `${b.date}-${b.id}`.localeCompare(`${a.date}-${a.id}`));
 }
@@ -238,8 +233,6 @@ function renderRecords() {
       <div class="record-top"><span class="record-date">${moneyDate(item.date)}</span><div class="record-actions"><button data-edit="${item.id}">编辑</button><button data-delete="${item.id}">删除</button></div></div>
       <div class="record-type">${escapeHtml(item.type)}</div>
       <div class="record-metrics"><span class="metric"><b>${item.minutes}</b> 分钟</span><span class="metric"><b>${item.total}</b> 题</span><span class="metric good">正确 <b>${item.correct}</b></span><span class="metric">错误 <b>${item.wrong}</b></span><span class="metric">正确率 <b>${accuracy}%</b></span></div>
-      ${item.errorType ? `<div class="record-error">错误类型：${escapeHtml(item.errorType)}</div>` : ''}
-      ${item.note ? `<p class="record-note">${escapeHtml(item.note)}</p>` : ''}
     </article>`;
   }).join('');
 }
@@ -288,14 +281,14 @@ function editRecord(id) {
 }
 
 async function cloudInsert(item) {
-  const data = await restRequest('training_sessions', { method: 'POST', body: JSON.stringify({ session_date: item.date, module: item.type, total: item.total, correct: item.correct, minutes: item.minutes, note: item.note || null, error_type: item.errorType || null }) });
+  const data = await restRequest('training_sessions', { method: 'POST', body: JSON.stringify({ session_date: item.date, module: item.type, total: item.total, correct: item.correct, minutes: item.minutes }) });
   return data?.[0];
 }
 
 async function cloudUpdate(item) {
   if (!item.id.startsWith('cloud-')) return;
   const id = item.id.slice(6);
-  await restRequest(`training_sessions?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ session_date: item.date, module: item.type, total: item.total, correct: item.correct, minutes: item.minutes, note: item.note || null, error_type: item.errorType || null }) });
+  await restRequest(`training_sessions?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ session_date: item.date, module: item.type, total: item.total, correct: item.correct, minutes: item.minutes }) });
 }
 
 async function cloudDelete(item) {
@@ -305,11 +298,11 @@ async function cloudDelete(item) {
 
 async function loadCloudRecords() {
   let data;
-  try { data = await restRequest('training_sessions?select=id,module,total,correct,minutes,session_date,note,error_type,created_at&order=session_date.desc'); }
+    try { data = await restRequest('training_sessions?select=id,module,total,correct,minutes,session_date,created_at&order=session_date.desc'); }
   catch (error) { cloudReady = false; syncStatus.textContent = `云端错误：${error.message.slice(0, 40)}`; return; }
   if (!data) { cloudReady = false; syncStatus.textContent = '云端不可用，本机数据保留'; return; }
   cloudReady = true;
-  const cloudRecords = data.map((item) => ({ id: `cloud-${item.id}`, date: item.session_date, type: item.module, minutes: item.minutes, total: item.total, correct: item.correct, wrong: item.total - item.correct, errorType: item.error_type || '', note: item.note || '' }));
+    const cloudRecords = data.map((item) => ({ id: `cloud-${item.id}`, date: item.session_date, type: item.module, minutes: item.minutes, total: item.total, correct: item.correct, wrong: item.total - item.correct }));
   const localOnly = records.filter((local) => !cloudRecords.some((cloud) => cloud.date === local.date && cloud.type === local.type && cloud.total === local.total && cloud.correct === local.correct));
   // Never replace local data with an empty or incomplete cloud response.
   records = [...cloudRecords, ...localOnly];
@@ -320,7 +313,7 @@ async function loadCloudRecords() {
 
 async function syncLocalRecords() {
   let cloudData;
-    try { cloudData = await restRequest('training_sessions?select=id,module,total,correct,minutes,session_date,note,error_type'); }
+    try { cloudData = await restRequest('training_sessions?select=id,module,total,correct,minutes,session_date'); }
   catch { return; }
   const cloudRecords = cloudData || [];
   const pending = records.filter((local) => !local.id.startsWith('cloud-') && !cloudRecords.some((remote) => remote.session_date === local.date && remote.module === local.type && remote.total === local.total && remote.correct === local.correct));
@@ -341,7 +334,7 @@ form.addEventListener('submit', async (event) => {
   const data = new FormData(form);
   const total = number(data.get('total'));
   const correct = Math.min(total, number(data.get('correct')));
-  const item = { id: data.get('id') || `${Date.now()}`, date: data.get('date'), type: data.get('type').trim(), minutes: number(data.get('minutes')), total, correct, wrong: total - correct, errorType: data.get('errorType').trim(), note: data.get('note').trim() };
+  const item = { id: data.get('id') || `${Date.now()}`, date: data.get('date'), type: data.get('type').trim(), minutes: number(data.get('minutes')), total, correct, wrong: total - correct };
   if (!item.date || !item.type || !total) return showToast('请填写日期、类型和题数');
   const index = records.findIndex((record) => record.id === item.id);
   const isEdit = index >= 0;
