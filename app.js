@@ -179,11 +179,32 @@ function renderDayDetail(date) {
 function renderAnalysis() {
   const typeMap = records.reduce((map, item) => { const row = map[item.type] || { total: 0, correct: 0, minutes: 0 }; row.total += item.total; row.correct += item.correct; row.minutes += item.minutes; map[item.type] = row; return map; }, {});
   const types = Object.entries(typeMap).map(([type, value]) => ({ type, ...value, accuracy: value.correct / value.total * 100, speed: value.minutes / value.total })).sort((a, b) => b.total - a.total);
-  document.querySelector('#typeDashboard').innerHTML = types.length ? types.map((item) => { const level = item.accuracy >= 80 ? 'strong' : item.accuracy >= 60 ? 'steady' : 'weak'; return `<button class="type-dashboard-card ${level}" data-type-filter="${escapeHtml(item.type)}" type="button"><div class="type-dashboard-head"><strong>${escapeHtml(item.type)}</strong><b>${item.accuracy.toFixed(1)}%</b></div><div class="type-dashboard-track"><i style="width:${item.accuracy}%"></i></div><div class="type-dashboard-metrics"><span class="metric-total"><b>${item.total}</b>题</span><span class="metric-correct"><b>${item.correct}</b>对</span><span class="metric-wrong"><b>${item.total - item.correct}</b>错</span><span class="metric-time"><b>${item.minutes}</b>分钟</span><span class="metric-speed"><b>${item.speed.toFixed(2)}</b>分/题</span></div></button>`; }).join('') : '<span class="required-note">填写记录后显示题型详细数据</span>';
+  document.querySelector('#typeDashboard').innerHTML = types.length ? types.map((item) => { const evaluation = evaluateAbility(item.total, item.accuracy); return `<button class="type-dashboard-card ${evaluation.key}" data-type-filter="${escapeHtml(item.type)}" type="button"><div class="type-dashboard-head"><strong>${escapeHtml(item.type)}</strong><span class="type-level ${evaluation.key}">${evaluation.label}</span><b>${item.accuracy.toFixed(1)}%</b></div><div class="type-dashboard-track"><i style="width:${item.accuracy}%"></i></div><div class="type-dashboard-metrics"><span class="metric-total"><b>${item.total}</b>题</span><span class="metric-correct"><b>${item.correct}</b>对</span><span class="metric-wrong"><b>${item.total - item.correct}</b>错</span><span class="metric-time"><b>${item.minutes}</b>分钟</span><span class="metric-speed"><b>${item.speed.toFixed(2)}</b>分/题</span></div></button>`; }).join('') : '<span class="required-note">填写记录后显示题型详细数据</span>';
+}
+
+function evaluateAbility(total, accuracy) {
+  if (!total || total < 30) return { key: 'insufficient', label: '样本不足' };
+  if (accuracy >= 90) return { key: 'excellent', label: '优势' };
+  if (accuracy >= 80) return { key: 'strong', label: '稳定' };
+  if (accuracy >= 60) return { key: 'steady', label: '基础' };
+  return { key: 'weak', label: '薄弱' };
 }
 
 function renderInsights(total, correct) {
   const generalMinutes = records.filter((item) => !isPublicBasics(item)).reduce((sum, item) => sum + item.minutes, 0);
+  const generalRecords = records.filter((item) => !isPublicBasics(item));
+  const accuracy = total ? (correct / total) * 100 : 0;
+  const ability = evaluateAbility(total, accuracy);
+  const generalTypes = generalRecords.reduce((map, item) => { const row = map[item.type] || { total: 0, correct: 0 }; row.total += item.total; row.correct += item.correct; map[item.type] = row; return map; }, {});
+  const weakTypes = Object.entries(generalTypes).map(([type, value]) => ({ type, accuracy: value.correct / value.total * 100, total: value.total })).filter((item) => item.total >= 30 && item.accuracy < 80).sort((a, b) => a.accuracy - b.accuracy).slice(0, 2);
+  document.querySelector('#abilityLevel').textContent = ability.label;
+  document.querySelector('#abilityLevel').className = `ability-level-${ability.key}`;
+  document.querySelector('#abilityConfidence').textContent = total >= 100 ? '判断较可靠' : total >= 30 ? '持续积累中' : '样本不足';
+  document.querySelector('#abilityLevelHint').textContent = total < 30 ? `还需 ${30 - total} 题进入评估` : `${generalRecords.length} 组非公基训练`;
+  document.querySelector('#abilityAccuracy').textContent = `${accuracy.toFixed(1)}%`;
+  document.querySelector('#abilitySpeed').textContent = total ? (generalMinutes / total).toFixed(2) : '0';
+  document.querySelector('#abilityQuestions').textContent = total;
+  document.querySelector('#abilityFocus').textContent = weakTypes.length ? weakTypes.map((item) => `${item.type} ${item.accuracy.toFixed(1)}%`).join('、') : (total < 30 ? '完成更多训练后生成' : '暂无明显短板');
 
   const typeTotals = records.reduce((map, item) => { map[item.type] = (map[item.type] || 0) + item.total; return map; }, {});
   // Keep every recorded subject visible; the panel itself scrolls as subjects grow.
@@ -204,7 +225,6 @@ function renderInsights(total, correct) {
   document.querySelector('#publicBasicsSpeed').textContent = publicBasicsTotal ? (publicBasicsMinutes / publicBasicsTotal).toFixed(2) : '0';
   document.querySelector('#publicBasicsHint').textContent = publicBasicsTotal ? `${publicBasics.length} 组记录` : '暂无记录';
 
-  const accuracy = total ? (correct / total) * 100 : 0;
   document.querySelector('#panelAccuracy').textContent = `${accuracy.toFixed(1)}%`;
   document.querySelector('#accuracyFill').style.width = `${accuracy}%`;
   document.querySelector('#accuracyHint').textContent = total ? (accuracy >= 80 ? '状态不错' : accuracy >= 60 ? '继续保持' : '重点复盘') : '暂无数据';
