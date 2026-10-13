@@ -1,5 +1,6 @@
 const STORAGE_KEY = 'daily-practice-records';
 const MEMORY_STORAGE_KEY = 'daily-memory-cards';
+const TARGET_STORAGE_KEY = 'daily-study-targets';
 const ACCESS_CODE = 'ccday-7m4k2p';
 const accessValue = window.location.hash.replace(/^#\/?/, '').split('?')[0].trim();
 const hasAccess = accessValue === ACCESS_CODE;
@@ -22,6 +23,7 @@ let editingMemory = false;
 let cloudReady = Boolean(supabaseClient);
 let calendarMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 let categoryFilter = 'all';
+let targets = { accuracy: 80, speed: 1.5, ...JSON.parse(localStorage.getItem(TARGET_STORAGE_KEY) || '{}') };
 
 async function restRequest(path, options = {}) {
   if (!config.url || !config.anonKey) throw new Error('Supabase 配置缺失');
@@ -151,6 +153,7 @@ function renderStats() {
   document.querySelector('#totalMinutes').textContent = minutes;
   document.querySelector('#recordDays').textContent = days;
   renderInsights(generalTotal, correct);
+  renderDiagnosis(generalRecords);
   renderCalendar();
   renderAnalysis();
 }
@@ -205,6 +208,9 @@ function renderInsights(total, correct) {
   document.querySelector('#abilitySpeed').textContent = total ? (generalMinutes / total).toFixed(2) : '0';
   document.querySelector('#abilityQuestions').textContent = total;
   document.querySelector('#abilityFocus').textContent = weakTypes.length ? weakTypes.map((item) => `${item.type} ${item.accuracy.toFixed(1)}%`).join('、') : (total < 30 ? '完成更多训练后生成' : '暂无明显短板');
+  document.querySelector('#targetAccuracy').value = targets.accuracy;
+  document.querySelector('#targetSpeed').value = targets.speed;
+  document.querySelector('#targetSummary').textContent = accuracy >= targets.accuracy ? '当前正确率已达到目标' : `还差 ${(targets.accuracy - accuracy).toFixed(1)} 个百分点`;
 
   const typeTotals = records.reduce((map, item) => { map[item.type] = (map[item.type] || 0) + item.total; return map; }, {});
   // Keep every recorded subject visible; the panel itself scrolls as subjects grow.
@@ -230,6 +236,47 @@ function renderInsights(total, correct) {
   document.querySelector('#accuracyHint').textContent = total ? (accuracy >= 80 ? '状态不错' : accuracy >= 60 ? '继续保持' : '重点复盘') : '暂无数据';
   document.querySelector('#accuracyText').textContent = total ? `共完成 ${total} 题，答对 ${correct} 题` : '记录后会显示表现';
   document.querySelector('#generalSpeed').textContent = total ? (generalMinutes / total).toFixed(2) : '0';
+}
+
+function summarizeSessions(items) {
+  const total = items.reduce((sum, item) => sum + item.total, 0);
+  const correct = items.reduce((sum, item) => sum + item.correct, 0);
+  const minutes = items.reduce((sum, item) => sum + item.minutes, 0);
+  return { total, accuracy: total ? correct / total * 100 : 0, speed: total ? minutes / total : 0 };
+}
+
+function renderDiagnosis(generalRecords) {
+  const ordered = [...generalRecords].sort((a, b) => `${a.date}-${a.id}`.localeCompare(`${b.date}-${b.id}`));
+  const recent = ordered.slice(-7);
+  const previous = ordered.slice(-14, -7);
+  const current = summarizeSessions(recent);
+  const before = summarizeSessions(previous);
+  const accuracyDelta = current.accuracy - before.accuracy;
+  const speedDelta = before.speed - current.speed;
+  const enoughTrend = recent.length >= 3 && previous.length > 0;
+  const progressing = enoughTrend && (accuracyDelta >= 2 || speedDelta >= .05);
+  const declining = enoughTrend && (accuracyDelta <= -2 || speedDelta <= -.05);
+  document.querySelector('#trendLabel').textContent = !enoughTrend ? '样本积累中' : progressing ? '正在进步' : declining ? '需要调整' : '表现稳定';
+  document.querySelector('#trendLabel').className = `diagnosis-badge ${progressing ? 'progress' : declining ? 'decline' : 'stable'}`;
+  document.querySelector('#trendSummary').textContent = !enoughTrend ? '继续记录，趋势会更准确' : progressing ? '最近阶段表现有所提升' : declining ? '最近阶段需要及时复盘' : '最近阶段保持稳定';
+  document.querySelector('#trendHint').textContent = enoughTrend ? '最近 7 组对比上一阶段' : '至少需要前后两个阶段的数据';
+  document.querySelector('#trendAccuracy').textContent = enoughTrend ? `${accuracyDelta >= 0 ? '+' : ''}${accuracyDelta.toFixed(1)} 个百分点` : '--';
+  document.querySelector('#trendSpeed').textContent = enoughTrend ? `${speedDelta >= 0 ? '+' : ''}${speedDelta.toFixed(2)} 分/题` : '--';
+  document.querySelector('#trendSamples').textContent = `${generalRecords.length} 组`;
+
+  const typeMap = generalRecords.reduce((map, item) => { const row = map[item.type] || { total: 0, correct: 0, minutes: 0 }; row.total += item.total; row.correct += item.correct; row.minutes += item.minutes; map[item.type] = row; return map; }, {});
+  const types = Object.entries(typeMap).map(([type, value]) => ({ type, total: value.total, accuracy: value.correct / value.total * 100, speed: value.minutes / value.total })).filter((item) => item.total >= 30);
+  const groups = { strongFast: [], strongSlow: [], weakFast: [], weakSlow: [] };
+  types.forEach((item) => { const strong = item.accuracy >= targets.accuracy; const fast = item.speed <= targets.speed; groups[`${strong ? 'strong' : 'weak'}${fast ? 'Fast' : 'Slow'}`].push(item); });
+  Object.entries(groups).forEach(([key, items]) => { const node = document.querySelector(`#quadrant${key.charAt(0).toUpperCase()}${key.slice(1)}`); node.textContent = items.length ? items.slice(0, 2).map((item) => `${item.type} ${item.accuracy.toFixed(0)}%`).join('、') : '暂无'; });
+  const advice = [];
+  if (generalRecords.reduce((sum, item) => sum + item.total, 0) < 30) advice.push('先完成 30 题以上，再判断综合水平。');
+  const weak = types.filter((item) => item.accuracy < targets.accuracy).sort((a, b) => a.accuracy - b.accuracy).slice(0, 2);
+  const slow = types.filter((item) => item.accuracy >= targets.accuracy && item.speed > targets.speed).sort((a, b) => b.speed - a.speed).slice(0, 2);
+  if (weak.length) advice.push(`优先补强：${weak.map((item) => `${item.type}（${item.accuracy.toFixed(1)}%）`).join('、')}。`);
+  if (slow.length) advice.push(`重点提速：${slow.map((item) => `${item.type}（${item.speed.toFixed(2)} 分/题）`).join('、')}。`);
+  if (!advice.length) advice.push('当前没有明显短板，继续保持训练频率并增加套题练习。');
+  document.querySelector('#adviceList').innerHTML = advice.map((item) => `<p>${escapeHtml(item)}</p>`).join('');
 }
 
 function filteredRecords() {
@@ -386,6 +433,13 @@ document.querySelector('.analysis-panel').addEventListener('click', (event) => {
 function filterByType(type) { categoryFilter = type; document.querySelector('#searchInput').value = ''; document.querySelector('#dateFilter').value = ''; renderRecords(); document.querySelector('#dailyRecords').scrollIntoView({ behavior: 'smooth', block: 'start' }); showToast(`正在查看：${type}`); }
 document.querySelector('#categoryFilters').addEventListener('click', (event) => { const button = event.target.closest('[data-category]'); if (!button) return; categoryFilter = button.dataset.category; renderRecords(); });
 document.querySelector('#clearFilters').addEventListener('click', () => { categoryFilter = 'all'; document.querySelector('#searchInput').value = ''; document.querySelector('#dateFilter').value = ''; renderRecords(); });
+['targetAccuracy', 'targetSpeed'].forEach((id) => document.querySelector(`#${id}`).addEventListener('change', (event) => {
+  const value = Number(event.target.value);
+  targets[id === 'targetAccuracy' ? 'accuracy' : 'speed'] = id === 'targetAccuracy' ? Math.min(100, Math.max(1, value || 80)) : Math.max(.01, value || 1.5);
+  localStorage.setItem(TARGET_STORAGE_KEY, JSON.stringify(targets));
+  renderStats();
+  showToast('目标已更新');
+}));
 document.querySelector('#retrySync').addEventListener('click', syncCloud);
 document.querySelector('#openMemory').addEventListener('click', () => { editingMemory = false; setMemoryModal(memoryModal, true); resetMemoryForm(); });
 document.querySelector('#openMemoryLibrary').addEventListener('click', () => { setMemoryModal(memoryLibraryModal, true); renderMemoryList(); });
