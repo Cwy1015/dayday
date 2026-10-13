@@ -59,3 +59,6 @@ select:hover { border-color:#b9cbd2; background-color:#fbfdfd; }
 #memoryModal .memory-form { min-height:min-content; }
 @media (max-width:600px) { #memoryModal .memory-dialog { max-height:94dvh; overflow-y:auto; -webkit-overflow-scrolling:touch; }.memory-dialog-head { position:sticky; top:0; z-index:3; }.memory-library-dialog .memory-dialog-head { flex:0 0 auto; } }
 @media (max-width:600px) { .topbar-actions { flex-wrap:wrap; justify-content:flex-end; max-width:210px; }.topbar-actions .memory-btn,.topbar-actions .sync-btn { padding:8px 9px; font-size:10px; } }
+.insights-grid { grid-template-columns:repeat(2,minmax(0,1fr)); align-items:stretch; }.insight-card { min-width:0; }.ability-summary-card { min-height:210px; }.ability-focus strong { overflow-wrap:anywhere; }
+@media (max-width:800px) { .insights-grid { grid-template-columns:1fr; }.insight-card { min-height:190px; }.ability-summary-card { min-height:0; } }
+@media (max-width:470px) { .insights-panel { padding:16px; }.insights-grid { gap:10px; }.insight-card { padding:16px; }.ability-level { margin-top:16px; }.ability-summary-metrics { gap:5px; }.ability-summary-metrics b { font-size:14px; } }
