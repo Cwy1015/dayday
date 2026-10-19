@@ -17,7 +17,8 @@ const memoryModal = document.querySelector('#memoryModal');
 const memoryLibraryModal = document.querySelector('#memoryLibraryModal');
 const memoryForm = document.querySelector('#memoryForm');
 const memoryList = document.querySelector('#memoryList');
-let records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+function normalizePracticeType(type) { return String(type || '').trim() === '言语理解' ? '片段阅读' : type; }
+let records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]').map((item) => ({ ...item, type: normalizePracticeType(item.type) }));
 let memoryRecords = JSON.parse(localStorage.getItem(MEMORY_STORAGE_KEY) || '[]');
 let editingMemory = false;
 let cloudReady = Boolean(supabaseClient);
@@ -369,7 +370,9 @@ async function loadCloudRecords() {
   catch (error) { cloudReady = false; syncStatus.textContent = `云端错误：${error.message.slice(0, 40)}`; return; }
   if (!data) { cloudReady = false; syncStatus.textContent = '云端不可用，本机数据保留'; return; }
   cloudReady = true;
-    const cloudRecords = data.map((item) => ({ id: `cloud-${item.id}`, date: item.session_date, type: item.module, minutes: item.minutes, total: item.total, correct: item.correct, wrong: item.total - item.correct }));
+    const legacyRecords = data.filter((item) => item.module === '言语理解');
+    await Promise.all(legacyRecords.map((item) => restRequest(`training_sessions?id=eq.${encodeURIComponent(item.id)}`, { method: 'PATCH', body: JSON.stringify({ module: '片段阅读' }) }).catch(() => null)));
+    const cloudRecords = data.map((item) => ({ id: `cloud-${item.id}`, date: item.session_date, type: normalizePracticeType(item.module), minutes: item.minutes, total: item.total, correct: item.correct, wrong: item.total - item.correct }));
   const localOnly = records.filter((local) => !cloudRecords.some((cloud) => cloud.date === local.date && cloud.type === local.type && cloud.total === local.total && cloud.correct === local.correct));
   // Never replace local data with an empty or incomplete cloud response.
   records = [...cloudRecords, ...localOnly];
@@ -382,7 +385,7 @@ async function syncLocalRecords() {
   let cloudData;
     try { cloudData = await restRequest('training_sessions?select=id,module,total,correct,minutes,session_date'); }
   catch { return; }
-  const cloudRecords = cloudData || [];
+  const cloudRecords = (cloudData || []).map((item) => ({ ...item, module: normalizePracticeType(item.module) }));
   const pending = records.filter((local) => !local.id.startsWith('cloud-') && !cloudRecords.some((remote) => remote.session_date === local.date && remote.module === local.type && remote.total === local.total && remote.correct === local.correct));
   for (const item of pending) {
     try {
