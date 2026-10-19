@@ -61,9 +61,7 @@ function normalizeRecord(item) {
   const submodule = item.submodule || (MODULE_SUBMODULES[module]?.includes(legacyType) ? legacyType : legacyType);
   let breakdown = item.breakdown || {};
   if (typeof breakdown === 'string') { try { breakdown = JSON.parse(breakdown); } catch { breakdown = {}; } }
-  const rawMode = item.practiceMode || item.practice_mode || (module === '全科套题' ? '套题训练' : submodule === '综合训练' ? '大模块综合' : '专项刷题');
-  const practiceMode = rawMode === '综合刷题' ? '大模块综合' : rawMode;
-  return { ...item, module, submodule, type: submodule, practiceMode, breakdown };
+  return { ...item, module, submodule, type: submodule, practiceMode: item.practiceMode || item.practice_mode || (module === '全科套题' ? '套题训练' : submodule === '综合训练' ? '大模块综合' : '专项刷题'), breakdown };
 }
 const displayType = (item) => `${item.module || inferModule(item.type)} · ${item.submodule || item.type} · ${item.practiceMode || '专项刷题'}`;
 const isPublicBasics = (item) => /公基|公共基础/.test(String(item.module || item.type || ''));
@@ -373,13 +371,11 @@ function updateSubmoduleOptions() {
 
 function updatePracticeMode() {
   const isMock = form.elements.practiceMode.value === '套题训练';
-  const isModuleTraining = form.elements.practiceMode.value === '大模块综合';
   if (isMock) form.elements.module.value = '全科套题';
   if (!isMock && form.elements.module.value === '全科套题') form.elements.module.value = '';
   form.elements.module.disabled = isMock;
-  form.elements.submodule.disabled = isMock || isModuleTraining;
+  form.elements.submodule.disabled = isMock;
   updateSubmoduleOptions();
-  if (isModuleTraining) form.elements.submodule.value = MODULE_SUBMODULES[form.elements.module.value]?.includes('综合训练') ? '综合训练' : (MODULE_SUBMODULES[form.elements.module.value] || ['综合训练'])[0];
   renderMockBreakdown();
 }
 
