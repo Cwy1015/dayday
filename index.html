@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@500;600;700;800&family=Noto+Serif+SC:wght@600;700;900&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="style.css?v=rename-reading-1" />
+    <link rel="stylesheet" href="style.css?v=training-modes-1" />
   </head>
   <body>
     <section id="accessGate" class="access-gate"><div class="access-card"><span class="brand-mark">考</span><h1>CC Day</h1><p>请使用完整访问链接打开</p><small>这是个人记录空间</small></div></section>
@@ -41,6 +41,15 @@
         </div>
       </section>
 
+      <section class="mode-panel panel" aria-label="训练模式汇总">
+        <div class="panel-heading"><div><span class="section-kicker">TRAINING MODES</span><h2>训练模式</h2></div><span class="required-note">专项、模块、套题分开统计</span></div>
+        <div class="mode-summary-grid">
+          <article class="mode-summary-card mode-special"><span class="mode-summary-label">专项训练</span><strong id="specialModeTotal">0 题</strong><b id="specialModeAccuracy">0%</b><small id="specialModeHint">记录具体题型</small></article>
+          <article class="mode-summary-card mode-module"><span class="mode-summary-label">模块训练</span><strong id="moduleModeTotal">0 题</strong><b id="moduleModeAccuracy">0%</b><small id="moduleModeHint">记录模块整体表现</small></article>
+          <article class="mode-summary-card mode-mock"><span class="mode-summary-label">套题训练</span><strong id="mockModeTotal">0 题</strong><b id="mockModeAccuracy">0%</b><small id="mockModeHint">按套题和题型拆分</small></article>
+        </div>
+      </section>
+
       <section class="diagnosis-grid" aria-label="备考诊断">
         <article class="diagnosis-card panel"><div class="panel-heading"><div><span class="section-kicker">PROGRESS CHECK</span><h2>阶段趋势</h2></div><span id="trendLabel" class="diagnosis-badge">样本积累中</span></div><div class="trend-main"><strong id="trendSummary">至少完成 3 组训练后生成</strong><span id="trendHint">对比最近 7 组与上一阶段</span></div><div class="trend-metrics"><div><span>正确率变化</span><b id="trendAccuracy">--</b></div><div><span>速度变化</span><b id="trendSpeed">--</b></div><div><span>当前样本</span><b id="trendSamples">0 组</b></div></div></article>
         <article class="diagnosis-card panel"><div class="panel-heading"><div><span class="section-kicker">EFFICIENCY MAP</span><h2>速度与正确率</h2></div><span class="required-note">按目标判断</span></div><div class="quadrant-grid"><div class="quadrant-cell quadrant-strong-fast"><b>优势区</b><span>正确率高 · 速度快</span><strong id="quadrantStrongFast">暂无</strong></div><div class="quadrant-cell quadrant-strong-slow"><b>提速区</b><span>正确率高 · 速度慢</span><strong id="quadrantStrongSlow">暂无</strong></div><div class="quadrant-cell quadrant-weak-fast"><b>稳准区</b><span>正确率低 · 速度快</span><strong id="quadrantWeakFast">暂无</strong></div><div class="quadrant-cell quadrant-weak-slow"><b>突破区</b><span>正确率低 · 速度慢</span><strong id="quadrantWeakSlow">暂无</strong></div></div></article>
@@ -57,7 +66,9 @@
           <div class="panel-heading"><div><span class="section-kicker">ADD A LOG</span><h2 id="formTitle">记录今天</h2></div><span class="required-note">所有数据可修改</span></div>
           <form id="dailyForm">
             <input type="hidden" name="id" />
-            <div class="form-row"><label>日期<input name="date" type="date" required /></label><label>刷题类型<select name="type" required><option value="" disabled selected>请选择题型</option><option value="公基">公基</option><option value="资料分析">资料分析</option><option value="片段阅读">片段阅读</option><option value="逻辑填空">逻辑填空</option><option value="图形推理">图形推理</option><option value="类比推理">类比推理</option><option value="定义判断">定义判断</option><option value="逻辑判断">逻辑判断</option><option value="数量关系">数量关系</option><option value="数字推理">数字推理</option></select></label></div>
+            <div class="form-row"><label>日期<input name="date" type="date" required /></label><label>训练模式<select name="practiceMode" id="practiceMode" required><option value="专项训练">专项训练</option><option value="模块训练">模块训练</option><option value="套题训练">套题训练</option></select></label></div>
+            <div class="form-row"><label>训练模块<select name="module" id="trainingModule" required><option value="" disabled selected>请选择模块</option><option value="公基">公基</option><option value="资料分析">资料分析</option><option value="片段阅读">片段阅读</option><option value="逻辑填空">逻辑填空</option><option value="图形推理">图形推理</option><option value="类比推理">类比推理</option><option value="定义判断">定义判断</option><option value="逻辑判断">逻辑判断</option><option value="数量关系">数量关系</option><option value="数字推理">数字推理</option></select></label><label id="submoduleField">具体题型<select name="submodule" id="trainingSubmodule"><option value="" disabled selected>请选择题型</option></select></label><label id="sessionNameField" hidden>套题名称<input name="sessionName" placeholder="例如：联考模拟卷一" /></label></div>
+            <div id="mockBreakdown" class="mock-breakdown" hidden><div class="mock-breakdown-head"><b>套题分题型记录</b><small>填写出现过的题型，整体数据会自动汇总</small></div><div class="mock-breakdown-grid"></div></div>
             <div class="form-row"><label>总用时（分钟）<input name="minutes" type="number" min="0" step="1" placeholder="例如：45" required /></label><label>总题数<input name="total" type="number" min="1" step="1" placeholder="例如：30" required /></label></div>
             <div class="form-row"><label>正确数量<input name="correct" type="number" min="0" step="1" placeholder="例如：24" required /></label><label>错误数量<input name="wrong" type="number" readonly placeholder="自动计算" /></label></div>
             <div class="form-actions"><button class="save-btn" type="submit">保存记录</button><button class="text-btn" id="resetForm" type="button">清空</button></div>
@@ -102,6 +113,6 @@
     <div class="toast" id="toast" role="status"></div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=visual-2"></script>
-    <script src="app.js?v=rename-reading-1"></script>
+    <script src="app.js?v=training-modes-1"></script>
   </body>
 </html>
