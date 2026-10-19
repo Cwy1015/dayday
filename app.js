@@ -20,16 +20,13 @@ const memoryList = document.querySelector('#memoryList');
 function normalizePracticeType(type) { return String(type || '').trim() === '言语理解' ? '片段阅读' : type; }
 const TRAINING_MODES = ['专项训练', '模块训练', '套题训练'];
 const TRAINING_TYPES = ['公基', '资料分析', '片段阅读', '逻辑填空', '图形推理', '类比推理', '定义判断', '事件排序', '逻辑判断', '数量关系', '数字推理'];
-const TRAINING_MODULES = ['公基', '资料分析', '片段阅读', '逻辑填空', '判断推理', '图形推理', '类比推理', '定义判断', '事件排序', '逻辑判断', '数量关系', '数字推理'];
 const MODULE_BREAKDOWNS = {
   判断推理: { 图形推理: 5, 类比推理: 5, 定义判断: 5, 事件排序: 5, 逻辑判断: 10 },
   数量关系: { 数字推理: 5, 数量关系: 10 },
-  公基: { 公基: 20 },
-  资料分析: { 资料分析: 20 },
-  片段阅读: { 片段阅读: 20 },
-  逻辑填空: { 逻辑填空: 20 }
+  言语理解: { 逻辑填空: 5, 片段阅读: 20 },
+  资料分析: { 资料分析: 10 }
 };
-const MODULE_MODE_OPTIONS = ['判断推理', '资料分析', '片段阅读', '逻辑填空', '数量关系', '公基'];
+const MODULE_MODE_OPTIONS = ['言语理解', '资料分析', '判断推理', '数量关系'];
 const MOCK_BREAKDOWN = { 公基: 20, 资料分析: 10, 片段阅读: 10, 逻辑填空: 10, 图形推理: 5, 类比推理: 5, 定义判断: 5, 事件排序: 5, 逻辑判断: 10, 数量关系: 10, 数字推理: 5 };
 const MODE_LABELS = { '专项训练': '专项', '模块训练': '模块', '套题训练': '套题' };
 
@@ -53,7 +50,7 @@ function normalizeRecord(item) {
   return {
     ...item,
     type,
-    module: normalizePracticeType(item.module || inferModule(type)),
+    module: String(item.module || inferModule(type)).trim() === '言语理解' && normalizeTrainingMode(item.practiceMode || item.practice_mode) === '模块训练' ? '言语理解' : normalizePracticeType(item.module || inferModule(type)),
     submodule: normalizePracticeType(item.submodule || type || '综合训练'),
     practiceMode: mode,
     sessionName: item.sessionName || item.session_name || '',
@@ -534,7 +531,7 @@ async function loadCloudRecords() {
   catch (error) { cloudReady = false; syncStatus.textContent = `云端错误：${error.message.slice(0, 40)}`; return; }
   if (!data) { cloudReady = false; syncStatus.textContent = '云端不可用，本机数据保留'; return; }
   cloudReady = true;
-    const legacyRecords = data.filter((item) => item.module === '言语理解');
+    const legacyRecords = data.filter((item) => item.module === '言语理解' && item.practice_mode !== '模块训练');
     await Promise.all(legacyRecords.map((item) => restRequest(`training_sessions?id=eq.${encodeURIComponent(item.id)}`, { method: 'PATCH', body: JSON.stringify({ module: '片段阅读' }) }).catch(() => null)));
     const cloudRecords = data.map((item) => normalizeRecord({ id: `cloud-${item.id}`, date: item.session_date, type: item.submodule || item.module, module: item.module, submodule: item.submodule, practice_mode: item.practice_mode, session_name: item.note, breakdown: item.breakdown, minutes: item.minutes, total: item.total, correct: item.correct, wrong: item.total - item.correct }));
   const localOnly = records.filter((local) => !cloudRecords.some((cloud) => cloud.date === local.date && cloud.type === local.type && cloud.total === local.total && cloud.correct === local.correct));
