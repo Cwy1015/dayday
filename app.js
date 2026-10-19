@@ -288,7 +288,7 @@ function renderModeOverview() {
   document.querySelector('#moduleModeBreakdown').innerHTML = MODULE_MODE_OPTIONS.map((module) => {
     const items = moduleRecords.filter((item) => normalizePracticeType(item.module) === normalizePracticeType(module));
     const value = summarizeSessions(items);
-    return `<div class="module-summary-item"><strong>${escapeHtml(module)}</strong><div><span>题量</span><b>${value.total}</b><small>题</small></div><div><span>正确率</span><b>${value.accuracy.toFixed(1)}%</b></div><div><span>训练组数</span><b>${items.length}</b><small>组</small></div><div><span>平均用时</span><b>${value.speed.toFixed(2)}</b><small>分/题</small></div></div>`;
+    return `<div class="module-summary-item"><div class="module-summary-head"><strong>${escapeHtml(module)}</strong><b>${value.accuracy.toFixed(1)}%</b></div><div class="module-summary-stats"><span><i>题量</i><b>${value.total}题</b></span><span><i>训练组</i><b>${items.length}组</b></span><span><i>平均用时</i><b>${value.speed.toFixed(2)}分/题</b></span></div></div>`;
   }).join('');
   const mockRecords = records.filter((item) => normalizeTrainingMode(item.practiceMode) === '套题训练');
   const mockTypes = new Map(Object.keys(MOCK_BREAKDOWN).map((type) => [type, { total: 0, correct: 0, sets: 0 }]));
@@ -313,7 +313,7 @@ function renderModeOverview() {
   if (unbrokenSets) mockTypes.set('未拆分历史记录', { total: unbrokenTotal, correct: unbrokenCorrect, sets: unbrokenSets });
   document.querySelector('#mockModeBreakdown').innerHTML = [...mockTypes].map(([type, value]) => {
     const accuracy = value.total ? value.correct / value.total * 100 : 0;
-    return `<div class="module-summary-item"><strong>${escapeHtml(type)}</strong><div><span>题量</span><b>${value.total}</b><small>题</small></div><div><span>正确率</span><b>${accuracy.toFixed(1)}%</b></div><div><span>错题数</span><b>${value.total - value.correct}</b><small>题</small></div><div><span>涉及套数</span><b>${value.sets}</b><small>套</small></div></div>`;
+    return `<div class="module-summary-item"><div class="module-summary-head"><strong>${escapeHtml(type)}</strong><b>${accuracy.toFixed(1)}%</b></div><div class="module-summary-stats"><span><i>题量</i><b>${value.total}题</b></span><span><i>错题</i><b>${value.total - value.correct}</b></span><span><i>涉及</i><b>${value.sets}套</b></span></div></div>`;
   }).join('');
 }
 
