@@ -1,5 +1,5 @@
-const CACHE = 'cc-day-shell-v52';
-const ASSETS = ['./', './index.html', './style.css?v=training-modes-1', './supabase-config.js?v=visual-2', './app.js?v=training-modes-1', './manifest.json'];
+const CACHE = 'cc-day-shell-v53';
+const ASSETS = ['./', './index.html', './style.css?v=training-modes-2', './supabase-config.js?v=visual-2', './app.js?v=training-modes-1', './manifest.json'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(ASSETS)));
