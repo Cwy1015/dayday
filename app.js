@@ -431,8 +431,17 @@ async function loadCloudRecords() {
     catch (fallbackError) { cloudReady = false; syncStatus.textContent = `云端错误：${fallbackError.message.slice(0, 40)}`; return; }
   }
   if (!data) { cloudReady = false; syncStatus.textContent = '云端不可用，本机数据保留'; return; }
+  if (!Array.isArray(data)) { cloudReady = false; syncStatus.textContent = '云端返回异常，本机数据保留'; return; }
+  if (!data.length && records.length) {
+    cloudReady = true;
+    syncStatus.textContent = '云端暂无返回，本机数据保留';
+    saveLocal();
+    renderStats();
+    renderRecords();
+    return;
+  }
   cloudReady = true;
-    const cloudRecords = data.map((item) => normalizeRecord({ id: `cloud-${item.id}`, date: item.session_date, type: item.submodule || item.module, module: item.module, submodule: item.submodule, practiceMode: item.practice_mode, breakdown: item.breakdown, minutes: item.minutes, total: item.total, correct: item.correct, wrong: item.total - item.correct }));
+  const cloudRecords = data.map((item) => normalizeRecord({ id: `cloud-${item.id}`, date: item.session_date, type: item.submodule || item.module, module: item.module, submodule: item.submodule, practiceMode: item.practice_mode, breakdown: item.breakdown, minutes: item.minutes, total: item.total, correct: item.correct, wrong: item.total - item.correct }));
   const localOnly = records.filter((local) => !cloudRecords.some((cloud) => cloud.date === local.date && cloud.module === local.module && cloud.submodule === local.submodule && cloud.practiceMode === local.practiceMode && cloud.total === local.total && cloud.correct === local.correct));
   // Never replace local data with an empty or incomplete cloud response.
   records = [...cloudRecords, ...localOnly];
