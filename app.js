@@ -566,7 +566,7 @@ memoryForm.addEventListener('submit', async (event) => {
   finally { saveButton.disabled = false; saveButton.textContent = '保存记忆'; }
 });
 memoryForm.querySelectorAll('input[type="file"]').forEach((input) => input.addEventListener('change', () => { const name = memoryForm.querySelector(`[data-upload-name="${input.name}"]`); if (name) name.textContent = input.files[0]?.name || '未选择'; }));
-document.querySelector('#quickAdd').addEventListener('click', () => { resetForm(); form.scrollIntoView({ behavior: 'smooth', block: 'start' }); form.elements.type.focus(); });
+document.querySelector('#quickAdd').addEventListener('click', () => { resetForm(); form.scrollIntoView({ behavior: 'smooth', block: 'start' }); form.elements.module.focus(); });
 recordsEl.addEventListener('click', (event) => {
   const edit = event.target.closest('[data-edit]');
   const remove = event.target.closest('[data-delete]');
@@ -583,9 +583,9 @@ async function syncCloud() {
   if (!hasAccess) return;
   if (!config.url || !config.anonKey) return showToast('云端服务未配置，当前可正常本机使用');
   syncStatus.textContent = '正在同步...';
-  await syncLocalRecords();
-  await loadCloudRecords();
-  await loadMemoryCards();
+  try { await loadCloudRecords(); } catch (error) { syncStatus.textContent = `读取失败：${error.message.slice(0, 32)}`; return; }
+  try { await syncLocalRecords(); } catch { syncStatus.textContent = '记录已读取，部分本机数据待同步'; }
+  try { await loadMemoryCards(); } catch { /* memory sync should not block practice records */ }
   syncStatus.textContent = cloudReady ? '已自动同步云端' : '云端策略未开启';
   showToast(cloudReady ? '云端同步完成' : '请先执行同步策略 SQL');
 }
