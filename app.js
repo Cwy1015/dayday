@@ -286,13 +286,19 @@ function renderStats() {
 function renderModeOverview() {
   const summary = (mode) => summarizeSessions(records.filter((item) => normalizeTrainingMode(item.practiceMode) === mode));
   const values = { special: summary('专项训练'), module: summary('模块训练'), mock: summary('套题训练') };
-  Object.entries(values).forEach(([key, value]) => {
+  ['special', 'mock'].forEach((key) => {
+    const value = values[key];
     document.querySelector(`#${key}ModeTotal`).textContent = `${value.total} 题`;
     document.querySelector(`#${key}ModeAccuracy`).textContent = `${value.accuracy.toFixed(1)}%`;
   });
   document.querySelector('#specialModeHint').textContent = `${records.filter((item) => item.practiceMode === '专项训练').length} 组 · ${values.special.speed.toFixed(2)} 分/题`;
-  document.querySelector('#moduleModeHint').textContent = `${records.filter((item) => item.practiceMode === '模块训练').length} 组 · ${values.module.speed.toFixed(2)} 分/题`;
   document.querySelector('#mockModeHint').textContent = `${records.filter((item) => item.practiceMode === '套题训练').length} 套 · ${values.mock.speed.toFixed(2)} 分/题`;
+  const moduleRecords = records.filter((item) => normalizeTrainingMode(item.practiceMode) === '模块训练');
+  document.querySelector('#moduleModeBreakdown').innerHTML = MODULE_MODE_OPTIONS.map((module) => {
+    const items = moduleRecords.filter((item) => normalizePracticeType(item.module) === normalizePracticeType(module));
+    const value = summarizeSessions(items);
+    return `<div class="module-summary-item"><strong>${escapeHtml(module)}</strong><div><span>题量</span><b>${value.total}</b><small>题</small></div><div><span>正确率</span><b>${value.accuracy.toFixed(1)}%</b></div><div><span>训练组数</span><b>${items.length}</b><small>组</small></div><div><span>平均用时</span><b>${value.speed.toFixed(2)}</b><small>分/题</small></div></div>`;
+  }).join('');
 }
 
 function renderCalendar() {
