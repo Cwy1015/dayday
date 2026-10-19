@@ -284,20 +284,36 @@ function renderStats() {
 }
 
 function renderModeOverview() {
-  const summary = (mode) => summarizeSessions(records.filter((item) => normalizeTrainingMode(item.practiceMode) === mode));
-  const values = { special: summary('专项训练'), module: summary('模块训练'), mock: summary('套题训练') };
-  ['special', 'mock'].forEach((key) => {
-    const value = values[key];
-    document.querySelector(`#${key}ModeTotal`).textContent = `${value.total} 题`;
-    document.querySelector(`#${key}ModeAccuracy`).textContent = `${value.accuracy.toFixed(1)}%`;
-  });
-  document.querySelector('#specialModeHint').textContent = `${records.filter((item) => item.practiceMode === '专项训练').length} 组 · ${values.special.speed.toFixed(2)} 分/题`;
-  document.querySelector('#mockModeHint').textContent = `${records.filter((item) => item.practiceMode === '套题训练').length} 套 · ${values.mock.speed.toFixed(2)} 分/题`;
   const moduleRecords = records.filter((item) => normalizeTrainingMode(item.practiceMode) === '模块训练');
   document.querySelector('#moduleModeBreakdown').innerHTML = MODULE_MODE_OPTIONS.map((module) => {
     const items = moduleRecords.filter((item) => normalizePracticeType(item.module) === normalizePracticeType(module));
     const value = summarizeSessions(items);
     return `<div class="module-summary-item"><strong>${escapeHtml(module)}</strong><div><span>题量</span><b>${value.total}</b><small>题</small></div><div><span>正确率</span><b>${value.accuracy.toFixed(1)}%</b></div><div><span>训练组数</span><b>${items.length}</b><small>组</small></div><div><span>平均用时</span><b>${value.speed.toFixed(2)}</b><small>分/题</small></div></div>`;
+  }).join('');
+  const mockRecords = records.filter((item) => normalizeTrainingMode(item.practiceMode) === '套题训练');
+  const mockTypes = new Map(Object.keys(MOCK_BREAKDOWN).map((type) => [type, { total: 0, correct: 0, sets: 0 }]));
+  let unbrokenTotal = 0;
+  let unbrokenCorrect = 0;
+  let unbrokenSets = 0;
+  mockRecords.forEach((item) => {
+    if (!item.breakdown || !Object.keys(item.breakdown).length) {
+      unbrokenTotal += item.total;
+      unbrokenCorrect += item.correct;
+      unbrokenSets += 1;
+      return;
+    }
+    Object.entries(item.breakdown).forEach(([type, data]) => {
+      const current = mockTypes.get(type) || { total: 0, correct: 0, sets: 0 };
+      current.total += number(data.total);
+      current.correct += number(data.correct);
+      current.sets += 1;
+      mockTypes.set(type, current);
+    });
+  });
+  if (unbrokenSets) mockTypes.set('未拆分历史记录', { total: unbrokenTotal, correct: unbrokenCorrect, sets: unbrokenSets });
+  document.querySelector('#mockModeBreakdown').innerHTML = [...mockTypes].map(([type, value]) => {
+    const accuracy = value.total ? value.correct / value.total * 100 : 0;
+    return `<div class="module-summary-item"><strong>${escapeHtml(type)}</strong><div><span>题量</span><b>${value.total}</b><small>题</small></div><div><span>正确率</span><b>${accuracy.toFixed(1)}%</b></div><div><span>错题数</span><b>${value.total - value.correct}</b><small>题</small></div><div><span>涉及套数</span><b>${value.sets}</b><small>套</small></div></div>`;
   }).join('');
 }
 
