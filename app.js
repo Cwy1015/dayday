@@ -17,7 +17,7 @@ const memoryModal = document.querySelector('#memoryModal');
 const memoryLibraryModal = document.querySelector('#memoryLibraryModal');
 const memoryForm = document.querySelector('#memoryForm');
 const memoryList = document.querySelector('#memoryList');
-let records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]').map(normalizeRecord);
+let records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 let memoryRecords = JSON.parse(localStorage.getItem(MEMORY_STORAGE_KEY) || '[]');
 let editingMemory = false;
 let cloudReady = Boolean(supabaseClient);
@@ -50,18 +50,7 @@ const today = () => {
 };
 const moneyDate = (value) => value ? value.replaceAll('-', '.') : '--';
 const number = (value) => Math.max(0, Number(value) || 0);
-const MODULE_SUBMODULES = {
-  公基: ['公基'], 资料分析: ['资料分析'], 言语理解: ['综合训练', '片段阅读', '逻辑填空'], 判断推理: ['综合训练', '图形推理', '类比推理', '定义判断', '逻辑判断'], 数量关系: ['综合训练', '数字推理', '数量关系'], 全科套题: ['整套试卷'], 其他: ['综合训练']
-};
-const inferModule = (type) => /图形推理|类比推理|定义判断|逻辑判断/.test(type) ? '判断推理' : /逻辑填空/.test(type) ? '言语理解' : /数字推理/.test(type) ? '数量关系' : type || '其他';
-function normalizeRecord(item) {
-  const legacyType = item.submodule || item.type || item.module || '综合训练';
-  const module = item.module && MODULE_SUBMODULES[item.module] ? item.module : inferModule(legacyType);
-  const submodule = item.submodule || (MODULE_SUBMODULES[module]?.includes(legacyType) ? legacyType : legacyType);
-  return { ...item, module, submodule, type: submodule, practiceMode: item.practiceMode || item.practice_mode || (module === '全科套题' ? '套题训练' : submodule === '综合训练' ? '大模块综合' : '专项刷题') };
-}
-const displayType = (item) => `${item.module || inferModule(item.type)} · ${item.submodule || item.type} · ${item.practiceMode || '专项刷题'}`;
-const isPublicBasics = (item) => /公基|公共基础/.test(String(item.module || item.type || ''));
+const isPublicBasics = (item) => /公基|公共基础/.test(String(item.type || ''));
 
 function showToast(message) {
   toast.textContent = message;
@@ -191,8 +180,8 @@ function renderDayDetail(date) {
 }
 
 function renderAnalysis() {
-  const typeMap = records.reduce((map, item) => { const key = `${item.module} · ${item.submodule} · ${item.practiceMode}`; const row = map[key] || { type: key, total: 0, correct: 0, minutes: 0 }; row.total += item.total; row.correct += item.correct; row.minutes += item.minutes; map[key] = row; return map; }, {});
-  const types = Object.values(typeMap).map((value) => ({ ...value, accuracy: value.correct / value.total * 100, speed: value.minutes / value.total })).sort((a, b) => b.total - a.total);
+  const typeMap = records.reduce((map, item) => { const row = map[item.type] || { total: 0, correct: 0, minutes: 0 }; row.total += item.total; row.correct += item.correct; row.minutes += item.minutes; map[item.type] = row; return map; }, {});
+  const types = Object.entries(typeMap).map(([type, value]) => ({ type, ...value, accuracy: value.correct / value.total * 100, speed: value.minutes / value.total })).sort((a, b) => b.total - a.total);
   document.querySelector('#typeDashboard').innerHTML = types.length ? types.map((item) => { const evaluation = evaluateAbility(item.total, item.accuracy); return `<button class="type-dashboard-card ${evaluation.key}" data-type-filter="${escapeHtml(item.type)}" type="button"><div class="type-dashboard-head"><strong>${escapeHtml(item.type)}</strong><span class="type-level ${evaluation.key}">${evaluation.label}</span><b>${item.accuracy.toFixed(1)}%</b></div><div class="type-dashboard-track"><i style="width:${item.accuracy}%"></i></div><div class="type-dashboard-metrics"><span class="metric-total"><b>${item.total}</b>题</span><span class="metric-correct"><b>${item.correct}</b>对</span><span class="metric-wrong"><b>${item.total - item.correct}</b>错</span><span class="metric-time"><b>${item.minutes}</b>分钟</span><span class="metric-speed"><b>${item.speed.toFixed(2)}</b>分/题</span></div></button>`; }).join('') : '<span class="required-note">填写记录后显示题型详细数据</span>';
 }
 
@@ -223,7 +212,7 @@ function renderInsights(total, correct) {
   document.querySelector('#targetSpeed').value = targets.speed;
   document.querySelector('#targetSummary').textContent = accuracy >= targets.accuracy ? '当前正确率已达到目标' : `还差 ${(targets.accuracy - accuracy).toFixed(1)} 个百分点`;
 
-  const typeTotals = records.reduce((map, item) => { const key = `${item.module} · ${item.submodule} · ${item.practiceMode}`; map[key] = (map[key] || 0) + item.total; return map; }, {});
+  const typeTotals = records.reduce((map, item) => { map[item.type] = (map[item.type] || 0) + item.total; return map; }, {});
   // Keep every recorded subject visible; the panel itself scrolls as subjects grow.
   const topTypes = Object.entries(typeTotals).sort((a, b) => b[1] - a[1]);
   const typeMax = Math.max(...topTypes.map((item) => item[1]), 1);
@@ -275,8 +264,8 @@ function renderDiagnosis(generalRecords) {
   document.querySelector('#trendSpeed').textContent = enoughTrend ? `${speedDelta >= 0 ? '+' : ''}${speedDelta.toFixed(2)} 分/题` : '--';
   document.querySelector('#trendSamples').textContent = `${generalRecords.length} 组`;
 
-  const typeMap = generalRecords.reduce((map, item) => { const key = `${item.module} · ${item.submodule} · ${item.practiceMode}`; const row = map[key] || { type: key, total: 0, correct: 0, minutes: 0 }; row.total += item.total; row.correct += item.correct; row.minutes += item.minutes; map[key] = row; return map; }, {});
-  const types = Object.values(typeMap).map((value) => ({ type: value.type, total: value.total, accuracy: value.correct / value.total * 100, speed: value.minutes / value.total })).filter((item) => item.total >= 30);
+  const typeMap = generalRecords.reduce((map, item) => { const row = map[item.type] || { total: 0, correct: 0, minutes: 0 }; row.total += item.total; row.correct += item.correct; row.minutes += item.minutes; map[item.type] = row; return map; }, {});
+  const types = Object.entries(typeMap).map(([type, value]) => ({ type, total: value.total, accuracy: value.correct / value.total * 100, speed: value.minutes / value.total })).filter((item) => item.total >= 30);
   const groups = { strongFast: [], strongSlow: [], weakFast: [], weakSlow: [] };
   types.forEach((item) => { const strong = item.accuracy >= targets.accuracy; const fast = item.speed <= targets.speed; groups[`${strong ? 'strong' : 'weak'}${fast ? 'Fast' : 'Slow'}`].push(item); });
   Object.entries(groups).forEach(([key, items]) => { const node = document.querySelector(`#quadrant${key.charAt(0).toUpperCase()}${key.slice(1)}`); node.textContent = items.length ? items.slice(0, 2).map((item) => `${item.type} ${item.accuracy.toFixed(0)}%`).join('、') : '暂无'; });
@@ -294,8 +283,8 @@ function filteredRecords() {
   const search = document.querySelector('#searchInput').value.trim().toLowerCase();
   const date = document.querySelector('#dateFilter').value;
   return [...records].filter((item) => {
-    const matchesSearch = !search || `${item.module} ${item.submodule} ${item.practiceMode}`.toLowerCase().includes(search);
-    return matchesSearch && (!date || item.date === date) && (categoryFilter === 'all' || displayType(item) === categoryFilter);
+    const matchesSearch = !search || String(item.type || '').toLowerCase().includes(search);
+    return matchesSearch && (!date || item.date === date) && (categoryFilter === 'all' || item.type === categoryFilter);
   }).sort((a, b) => `${b.date}-${b.id}`.localeCompare(`${a.date}-${a.id}`));
 }
 
@@ -309,14 +298,14 @@ function renderRecords() {
     const accuracy = item.total ? ((item.correct / item.total) * 100).toFixed(1) : '0.0';
     return `<article class="record">
       <div class="record-top"><span class="record-date">${moneyDate(item.date)}</span><div class="record-actions"><button data-edit="${item.id}">编辑</button><button data-delete="${item.id}">删除</button></div></div>
-      <div class="record-type">${escapeHtml(displayType(item))}<small class="record-mode">${escapeHtml(item.practiceMode)}</small></div>
+      <div class="record-type">${escapeHtml(item.type)}</div>
       <div class="record-metrics"><span class="metric"><b>${item.minutes}</b> 分钟</span><span class="metric"><b>${item.total}</b> 题</span><span class="metric good">正确 <b>${item.correct}</b></span><span class="metric">错误 <b>${item.wrong}</b></span><span class="metric">正确率 <b>${accuracy}%</b></span></div>
     </article>`;
   }).join('');
 }
 
 function renderCategoryFilters() {
-  const types = [...new Set(records.map((item) => displayType(item)).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'zh-CN'));
+  const types = [...new Set(records.map((item) => item.type).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'zh-CN'));
   document.querySelector('#categoryFilters').innerHTML = [['all', '全部'], ...types.map((type) => [type, type])].map(([value, label]) => `<button class="category-filter ${categoryFilter === value ? 'active' : ''}" data-category="${escapeHtml(value)}" type="button">${escapeHtml(label)}</button>`).join('');
 }
 
@@ -326,10 +315,9 @@ function renderDailyBreakdown(visible) {
     group.total += item.total;
     group.minutes += item.minutes;
     group.correct += item.correct;
-    const key = displayType(item);
-    group.types[key] = group.types[key] || { total: 0, minutes: 0 };
-    group.types[key].total += item.total;
-    group.types[key].minutes += item.minutes;
+    group.types[item.type] = group.types[item.type] || { total: 0, minutes: 0 };
+    group.types[item.type].total += item.total;
+    group.types[item.type].minutes += item.minutes;
     map[item.date] = group;
     return map;
   }, {});
@@ -345,50 +333,29 @@ function resetForm() {
   form.reset();
   form.elements.id.value = '';
   form.elements.date.value = today();
-  form.elements.practiceMode.value = '专项刷题';
-  updatePracticeMode();
   form.elements.wrong.value = '';
   document.querySelector('#formTitle').textContent = '记录今天';
   document.querySelector('.save-btn').textContent = '保存记录';
-}
-
-function updateSubmoduleOptions() {
-  const module = form.elements.module.value;
-  const submodule = form.elements.submodule;
-  const options = MODULE_SUBMODULES[module] || ['综合训练'];
-  const previous = submodule.value;
-  submodule.innerHTML = options.map((item) => `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`).join('');
-  submodule.value = options.includes(previous) ? previous : options[0];
-}
-
-function updatePracticeMode() {
-  const isMock = form.elements.practiceMode.value === '套题训练';
-  if (isMock) form.elements.module.value = '全科套题';
-  if (!isMock && form.elements.module.value === '全科套题') form.elements.module.value = '';
-  form.elements.module.disabled = isMock;
-  form.elements.submodule.disabled = isMock;
-  updateSubmoduleOptions();
 }
 
 function editRecord(id) {
   const item = records.find((record) => record.id === id);
   if (!item) return;
   Object.entries(item).forEach(([key, value]) => { if (form.elements[key]) form.elements[key].value = value; });
-  updatePracticeMode();
   document.querySelector('#formTitle').textContent = '修改记录';
   document.querySelector('.save-btn').textContent = '保存修改';
   form.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 async function cloudInsert(item) {
-  const data = await restRequest('training_sessions', { method: 'POST', body: JSON.stringify({ session_date: item.date, module: item.module, submodule: item.submodule, practice_mode: item.practiceMode, total: item.total, correct: item.correct, minutes: item.minutes }) });
+  const data = await restRequest('training_sessions', { method: 'POST', body: JSON.stringify({ session_date: item.date, module: item.type, total: item.total, correct: item.correct, minutes: item.minutes }) });
   return data?.[0];
 }
 
 async function cloudUpdate(item) {
   if (!item.id.startsWith('cloud-')) return;
   const id = item.id.slice(6);
-  await restRequest(`training_sessions?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ session_date: item.date, module: item.module, submodule: item.submodule, practice_mode: item.practiceMode, total: item.total, correct: item.correct, minutes: item.minutes }) });
+  await restRequest(`training_sessions?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ session_date: item.date, module: item.type, total: item.total, correct: item.correct, minutes: item.minutes }) });
 }
 
 async function cloudDelete(item) {
@@ -398,15 +365,12 @@ async function cloudDelete(item) {
 
 async function loadCloudRecords() {
   let data;
-  try { data = await restRequest('training_sessions?select=id,module,submodule,practice_mode,total,correct,minutes,session_date,created_at&order=session_date.desc'); }
-  catch (error) {
     try { data = await restRequest('training_sessions?select=id,module,total,correct,minutes,session_date,created_at&order=session_date.desc'); }
-    catch (fallbackError) { cloudReady = false; syncStatus.textContent = `云端错误：${fallbackError.message.slice(0, 40)}`; return; }
-  }
+  catch (error) { cloudReady = false; syncStatus.textContent = `云端错误：${error.message.slice(0, 40)}`; return; }
   if (!data) { cloudReady = false; syncStatus.textContent = '云端不可用，本机数据保留'; return; }
   cloudReady = true;
-    const cloudRecords = data.map((item) => normalizeRecord({ id: `cloud-${item.id}`, date: item.session_date, type: item.submodule || item.module, module: item.module, submodule: item.submodule, practiceMode: item.practice_mode, minutes: item.minutes, total: item.total, correct: item.correct, wrong: item.total - item.correct }));
-  const localOnly = records.filter((local) => !cloudRecords.some((cloud) => cloud.date === local.date && cloud.module === local.module && cloud.submodule === local.submodule && cloud.practiceMode === local.practiceMode && cloud.total === local.total && cloud.correct === local.correct));
+    const cloudRecords = data.map((item) => ({ id: `cloud-${item.id}`, date: item.session_date, type: item.module, minutes: item.minutes, total: item.total, correct: item.correct, wrong: item.total - item.correct }));
+  const localOnly = records.filter((local) => !cloudRecords.some((cloud) => cloud.date === local.date && cloud.type === local.type && cloud.total === local.total && cloud.correct === local.correct));
   // Never replace local data with an empty or incomplete cloud response.
   records = [...cloudRecords, ...localOnly];
   saveLocal();
@@ -416,10 +380,10 @@ async function loadCloudRecords() {
 
 async function syncLocalRecords() {
   let cloudData;
-  try { cloudData = await restRequest('training_sessions?select=id,module,submodule,practice_mode,total,correct,minutes,session_date'); }
-  catch { try { cloudData = await restRequest('training_sessions?select=id,module,total,correct,minutes,session_date'); } catch { return; } }
-  const cloudRecords = (cloudData || []).map((item) => normalizeRecord({ ...item, date: item.session_date, type: item.submodule || item.module, practiceMode: item.practice_mode }));
-  const pending = records.filter((local) => !local.id.startsWith('cloud-') && !cloudRecords.some((remote) => remote.date === local.date && remote.module === local.module && remote.submodule === local.submodule && remote.practiceMode === local.practiceMode && remote.total === local.total && remote.correct === local.correct));
+    try { cloudData = await restRequest('training_sessions?select=id,module,total,correct,minutes,session_date'); }
+  catch { return; }
+  const cloudRecords = cloudData || [];
+  const pending = records.filter((local) => !local.id.startsWith('cloud-') && !cloudRecords.some((remote) => remote.session_date === local.date && remote.module === local.type && remote.total === local.total && remote.correct === local.correct));
   for (const item of pending) {
     try {
       const created = await cloudInsert(item);
@@ -437,10 +401,8 @@ form.addEventListener('submit', async (event) => {
   const data = new FormData(form);
   const total = number(data.get('total'));
   const correct = Math.min(total, number(data.get('correct')));
-  const module = String(data.get('module') || '').trim();
-  const submodule = String(data.get('submodule') || '').trim();
-  const item = { id: data.get('id') || `${Date.now()}`, date: data.get('date'), module, submodule, type: submodule, practiceMode: data.get('practiceMode') || '专项刷题', minutes: number(data.get('minutes')), total, correct, wrong: total - correct };
-  if (!item.date || !item.module || !item.submodule || !total) return showToast('请填写日期、大模块、小模块和题数');
+  const item = { id: data.get('id') || `${Date.now()}`, date: data.get('date'), type: data.get('type').trim(), minutes: number(data.get('minutes')), total, correct, wrong: total - correct };
+  if (!item.date || !item.type || !total) return showToast('请填写日期、类型和题数');
   const index = records.findIndex((record) => record.id === item.id);
   const isEdit = index >= 0;
   if (isEdit) records[index] = item; else records.push(item);
@@ -460,8 +422,6 @@ form.addEventListener('submit', async (event) => {
 });
 
 document.querySelector('#resetForm').addEventListener('click', resetForm);
-form.elements.module.addEventListener('change', () => { if (form.elements.module.value === '全科套题') form.elements.practiceMode.value = '套题训练'; updatePracticeMode(); });
-form.elements.practiceMode.addEventListener('change', updatePracticeMode);
 document.querySelector('#prevMonth').addEventListener('click', () => { calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1); renderCalendar(); });
 document.querySelector('#nextMonth').addEventListener('click', () => { calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1); renderCalendar(); });
 document.querySelector('#calendarGrid').addEventListener('click', (event) => { const cell = event.target.closest('[data-date]'); if (cell) renderDayDetail(cell.dataset.date); });
