@@ -67,12 +67,14 @@ select:hover { border-color:#b9cbd2; background-color:#fbfdfd; }
 @media (max-width:800px) { .diagnosis-grid { grid-template-columns:1fr; }.advice-card { grid-column:auto; }.advice-list { grid-template-columns:1fr; }.diagnosis-card { padding:20px; } }
 @media (max-width:470px) { .target-panel > div { flex-wrap:wrap; }.trend-main { align-items:flex-start; flex-direction:column; gap:6px; }.trend-main span { text-align:left; }.trend-metrics { margin-top:18px; }.quadrant-cell { min-height:70px; } }
 
-.mode-panel { margin-top: 16px; }
-.mode-summary-grid { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:16px; margin-top:16px; }
-.mode-summary-card { position:relative; min-height:0; padding:16px 18px 14px; border:1px solid rgba(38,124,108,.12); border-radius:14px; background:#f8fbfa; box-shadow:none; }
-.mode-summary-card::after,.mode-summary-card::before { display:none; }
-.mode-summary-card.mode-module { border-color:rgba(74,120,136,.15); background:#f7fafb; }
-.mode-summary-card.mode-mock { border-color:rgba(177,117,30,.15); background:#fffaf2; }
+.mode-panel { margin-top:16px; padding:24px; }
+.mode-summary-grid { display:grid; grid-template-columns:1fr; gap:14px; margin-top:16px; }
+.mode-summary-card { position:relative; min-height:0; padding:17px 20px 14px 23px; border:1px solid rgba(38,124,108,.12); border-radius:14px; background:#f8fbfa; box-shadow:none; }
+.mode-summary-card::after { display:none; }
+.mode-summary-card::before { position:absolute; top:14px; bottom:14px; left:0; display:block; width:4px; border-radius:0 4px 4px 0; background:#5c92a3; content:""; }
+.mode-summary-card.mode-module { border-color:#c8dce2; background:linear-gradient(100deg,#edf5f7 0%,#f8fbfc 60%); }
+.mode-summary-card.mode-mock { border-color:#ecd9b4; background:linear-gradient(100deg,#fff5e3 0%,#fffbf4 60%); }
+.mode-summary-card.mode-mock::before { background:#d29531; }
 .module-summary-wide { grid-column:1 / -1; min-height:0; }
 .mode-stat-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:28px; margin-top:8px; }
 .mode-stat-row { display:grid; grid-template-columns:minmax(92px,1fr) auto auto auto auto; align-items:center; gap:12px; min-width:0; min-height:39px; padding:6px 2px; border-bottom:1px solid rgba(76,120,136,.12); }
@@ -84,10 +86,10 @@ select:hover { border-color:#b9cbd2; background-color:#fbfdfd; }
 .mode-summary-card .mode-stat-row > .mode-time-ok b { color:#267c6c; }
 .mode-summary-card .mode-stat-row > .mode-time-over b { color:#c5544a; }
 .mode-summary-card .mode-stat-row > .mode-time-target b { color:#3e7080; font-weight:700; }
-.mode-mock .mode-stat-row { border-color:rgba(162,109,28,.13); }
+.mode-mock .mode-stat-row { border-color:rgba(162,109,28,.19); }
 .mode-mock .mode-stat-row > strong { color:#72551f; }
 .mode-mock .mode-stat-row > span b { color:#715923; }
-.mode-summary-card.mode-mock .mode-stat-row > .mode-stat-accuracy { color:#996c25; background:#f7edd8; }
+.mode-summary-card.mode-mock .mode-stat-row > .mode-stat-accuracy { color:#8c5e14; background:#f7e8c8; }
 .mode-summary-note { margin-left:auto; color:var(--muted); font-size:9px; }
 .mock-time-note { display:block; margin-top:8px; color:var(--muted); font-size:9px; }
 .mode-summary-top,.mode-summary-main,.mode-summary-card small { position:relative; z-index:1; }.mode-summary-top { display:flex; align-items:center; gap:9px; }.mode-summary-dot { width:8px; height:8px; border-radius:50%; background:#5caa95; box-shadow:0 0 0 4px rgba(92,170,149,.13); }.mode-module .mode-summary-dot { background:#6d9caf; box-shadow:0 0 0 4px rgba(109,156,175,.13); }.mode-mock .mode-summary-dot { background:#d99a35; box-shadow:0 0 0 4px rgba(217,154,53,.14); }.mode-summary-label { color:var(--ink); font-size:13px; font-weight:800; }.mode-summary-index { margin-left:auto; color:var(--muted); font-family:"DM Mono",monospace; font-size:10px; opacity:.65; }.mode-summary-main { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:20px; }.mode-summary-card strong { color:var(--ink); font-family:"DM Mono",monospace; font-size:25px; line-height:1.2; letter-spacing:-.8px; }.mode-summary-card b { position:relative; z-index:1; padding:7px 10px; border:1px solid rgba(38,124,108,.13); border-radius:10px; color:#267c6c; background:rgba(255,255,255,.62); font-family:"DM Mono",monospace; font-size:16px; line-height:1; }.mode-module b { border-color:rgba(76,120,136,.16); color:#4c7888; }.mode-mock b { border-color:rgba(162,109,28,.15); color:#a26d1c; }.mode-summary-card small { display:block; margin-top:9px; color:var(--muted); font-size:10px; }
@@ -95,6 +97,6 @@ select:hover { border-color:#b9cbd2; background-color:#fbfdfd; }
 .dashboard-mode-group { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:9px; margin-bottom:15px; }.dashboard-mode-title { grid-column:1 / -1; display:flex; justify-content:space-between; align-items:center; padding-bottom:2px; color:var(--ink); font-size:12px; }.dashboard-mode-title span { color:var(--muted); font-size:10px; font-weight:500; }
 .mock-breakdown-row input[data-breakdown-total] { border-color:#e3ddd2; color:#697879; background:#f4f1eb; }.mock-breakdown-row input[data-breakdown-correct] { border-color:#b8d9ce; background:#fff; }
 [hidden] { display:none !important; }
-@media (max-width:700px) { .mode-summary-grid { grid-template-columns:1fr; gap:10px; margin-top:14px; }.mode-summary-card { padding:14px 13px 12px; border-radius:12px; }.mode-stat-list { grid-template-columns:1fr; }.mode-stat-row { grid-template-columns:minmax(90px,1fr) auto auto auto auto; gap:9px; min-height:36px; }.mode-summary-top { gap:8px; }.mode-summary-note { font-size:9px; } }
+@media (max-width:700px) { .mode-panel { padding:18px 15px; }.mode-summary-grid { gap:11px; margin-top:14px; }.mode-summary-card { padding:14px 11px 12px 16px; border-radius:12px; }.mode-summary-card::before { top:11px; bottom:11px; }.mode-stat-list { grid-template-columns:1fr; }.mode-stat-row { grid-template-columns:minmax(90px,1fr) auto auto auto auto; gap:9px; min-height:36px; }.mode-summary-top { gap:8px; }.mode-summary-note { font-size:9px; } }
 @media (max-width:380px) { .mode-stat-row { grid-template-columns:minmax(76px,1fr) auto auto auto auto; gap:6px; }.mode-stat-row > span { gap:3px; font-size:8px; }.mode-stat-row > span b { font-size:8px; }.mode-stat-accuracy { min-width:40px; font-size:9px; } }
 @media (max-width:520px) { .dashboard-mode-group { grid-template-columns:1fr; } }
