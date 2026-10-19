@@ -185,6 +185,7 @@ function updateWrong() {
 
 function buildModeBreakdown(mode, module) {
   const container = document.querySelector('.mock-breakdown-grid');
+  container.classList.toggle('module-breakdown', mode === '模块训练');
   const preset = mode === '套题训练' ? MOCK_BREAKDOWN : (MODULE_BREAKDOWNS[module] || {});
   container.innerHTML = Object.entries(preset).map(([type, total]) => `<div class="mock-breakdown-row"><span>${type}</span><input type="number" min="0" step="1" value="${total}" readonly data-breakdown-total="${type}" aria-label="${type}题数"><input type="number" min="0" max="${total}" step="1" placeholder="填正确数" data-breakdown-correct="${type}" aria-label="${type}正确数"></div>`).join('');
   document.querySelector('#breakdownTitle').textContent = mode === '套题训练' ? '套题分题型记录' : `${module}小模块记录`;
