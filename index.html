@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@500;600;700;800&family=Noto+Serif+SC:wght@600;700;900&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="style.css?v=mock-breakdown-1" />
+    <link rel="stylesheet" href="style.css?v=module-tree-1" />
   </head>
   <body>
     <section id="accessGate" class="access-gate"><div class="access-card"><span class="brand-mark">考</span><h1>CC Day</h1><p>请使用完整访问链接打开</p><small>这是个人记录空间</small></div></section>
@@ -61,7 +61,6 @@
             <div class="form-row"><label>大模块<select name="module" required><option value="" disabled selected>请选择大模块</option><option value="公基">公基</option><option value="资料分析">资料分析</option><option value="言语理解">言语理解</option><option value="判断推理">判断推理</option><option value="数量关系">数量关系</option><option value="全科套题">全科套题</option><option value="其他">其他</option></select></label><label>小模块<select name="submodule" required></select></label></div>
             <div class="form-row"><label>总用时（分钟）<input name="minutes" type="number" min="0" step="1" placeholder="例如：45" required /></label><label>总题数<input name="total" type="number" min="1" step="1" placeholder="例如：30" required /></label></div>
             <div class="form-row"><label>正确数量<input name="correct" type="number" min="0" step="1" placeholder="例如：24" required /></label><label>错误数量<input name="wrong" type="number" readonly placeholder="自动计算" /></label></div>
-            <div id="mockBreakdown" class="mock-breakdown" hidden><div class="mock-breakdown-head"><b>套题分模块明细</b><span>填写后自动量化各题型错误</span></div><div id="mockBreakdownFields" class="mock-breakdown-fields"></div></div>
             <div class="form-actions"><button class="save-btn" type="submit">保存记录</button><button class="text-btn" id="resetForm" type="button">清空</button></div>
           </form>
           <p class="form-tip">专项刷题填写具体小模块；大模块综合选择“综合训练”；全科套题选择“全科套题 / 整套试卷”。</p>
@@ -104,6 +103,6 @@
     <div class="toast" id="toast" role="status"></div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=visual-2"></script>
-    <script src="app.js?v=mock-breakdown-1"></script>
+    <script src="app.js?v=module-tree-1"></script>
   </body>
 </html>
