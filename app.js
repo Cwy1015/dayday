@@ -23,8 +23,13 @@ const TRAINING_TYPES = ['公基', '资料分析', '片段阅读', '逻辑填空'
 const TRAINING_MODULES = ['公基', '资料分析', '片段阅读', '逻辑填空', '判断推理', '图形推理', '类比推理', '定义判断', '事件排序', '逻辑判断', '数量关系', '数字推理'];
 const MODULE_BREAKDOWNS = {
   判断推理: { 图形推理: 5, 类比推理: 5, 定义判断: 5, 事件排序: 5, 逻辑判断: 10 },
-  数量关系: { 数字推理: 5, 数量关系: 10 }
+  数量关系: { 数字推理: 5, 数量关系: 10 },
+  公基: { 公基: 20 },
+  资料分析: { 资料分析: 20 },
+  片段阅读: { 片段阅读: 20 },
+  逻辑填空: { 逻辑填空: 20 }
 };
+const MODULE_MODE_OPTIONS = ['判断推理', '资料分析', '片段阅读', '逻辑填空', '数量关系', '公基'];
 const MOCK_BREAKDOWN = { 公基: 20, 资料分析: 10, 片段阅读: 10, 逻辑填空: 10, 图形推理: 5, 类比推理: 5, 定义判断: 5, 事件排序: 5, 逻辑判断: 10, 数量关系: 10, 数字推理: 5 };
 const MODE_LABELS = { '专项训练': '专项', '模块训练': '模块', '套题训练': '套题' };
 
@@ -184,7 +189,7 @@ function updateWrong() {
 function buildModeBreakdown(mode, module) {
   const container = document.querySelector('.mock-breakdown-grid');
   const preset = mode === '套题训练' ? MOCK_BREAKDOWN : (MODULE_BREAKDOWNS[module] || {});
-  container.innerHTML = Object.entries(preset).map(([type, total]) => `<div class="mock-breakdown-row"><span>${type}</span><input type="number" min="0" step="1" value="${total}" data-breakdown-total="${type}" aria-label="${type}题数"><input type="number" min="0" max="${total}" step="1" placeholder="填正确数" data-breakdown-correct="${type}" aria-label="${type}正确数"></div>`).join('');
+  container.innerHTML = Object.entries(preset).map(([type, total]) => `<div class="mock-breakdown-row"><span>${type}</span><input type="number" min="0" step="1" value="${total}" readonly data-breakdown-total="${type}" aria-label="${type}题数"><input type="number" min="0" max="${total}" step="1" placeholder="填正确数" data-breakdown-correct="${type}" aria-label="${type}正确数"></div>`).join('');
   document.querySelector('#breakdownTitle').textContent = mode === '套题训练' ? '套题分题型记录' : `${module}小模块记录`;
   document.querySelector('#breakdownHint').textContent = mode === '套题训练' ? '题量已预置，只需要填写各题型正确数' : '小模块题量已预置，只需要填写各项正确数';
 }
@@ -210,15 +215,27 @@ function updateModuleOptions() {
   select.value = options[0] || '';
 }
 
+function refreshModuleChoices(mode) {
+  const select = form.elements.module;
+  const choices = mode === '模块训练' ? MODULE_MODE_OPTIONS : TRAINING_TYPES;
+  const current = select.value;
+  select.innerHTML = '<option value="" disabled selected>请选择题型</option>' + choices.map((item) => `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`).join('');
+  if (choices.includes(current)) select.value = current;
+}
+
 function updateTrainingMode() {
   const mode = form.elements.practiceMode.value;
   const mock = mode === '套题训练';
+  refreshModuleChoices(mode);
   const module = form.elements.module.value;
   document.querySelector('#sessionNameField').hidden = !mock;
   document.querySelector('#moduleField').hidden = mock;
   document.querySelector('#modeBreakdown').hidden = !(mock || (mode === '模块训练' && MODULE_BREAKDOWNS[module]));
   document.querySelector('#moduleLabel').textContent = mode === '专项训练' ? '刷题类型' : '训练模块';
   form.elements.module.disabled = mock;
+  const fixedBreakdown = mock || mode === '模块训练';
+  form.elements.total.readOnly = fixedBreakdown;
+  form.elements.correct.readOnly = fixedBreakdown;
   if (mode === '专项训练') form.elements.module.setAttribute('required', '');
   if (mock) { form.elements.module.value = '套题'; form.elements.submodule.value = '整套试卷'; buildModeBreakdown(mode); }
   else if (mode === '模块训练') { buildModeBreakdown(mode, module); }
@@ -465,7 +482,7 @@ function resetForm() {
   document.querySelector('#moduleField').hidden = false;
   document.querySelector('#sessionNameField').hidden = true;
   document.querySelector('#modeBreakdown').hidden = true;
-  updateModuleOptions();
+  updateTrainingMode();
   form.elements.wrong.value = '';
   document.querySelector('#formTitle').textContent = '记录今天';
   document.querySelector('.save-btn').textContent = '保存记录';
@@ -543,7 +560,7 @@ async function syncLocalRecords() {
 
 form.addEventListener('input', updateWrong);
 document.querySelector('#practiceMode').addEventListener('change', updateTrainingMode);
-document.querySelector('#trainingModule').addEventListener('change', updateModuleOptions);
+document.querySelector('#trainingModule').addEventListener('change', updateTrainingMode);
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
   const data = new FormData(form);
