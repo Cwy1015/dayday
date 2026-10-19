@@ -27,6 +27,7 @@ const MODULE_BREAKDOWNS = {
   资料分析: { 资料分析: 10 }
 };
 const MODULE_MODE_OPTIONS = ['言语理解', '资料分析', '判断推理', '数量关系'];
+const MODULE_TIME_TARGETS = { 言语理解: 25, 判断推理: 25, 资料分析: 10, 数量关系: 20 };
 const MOCK_BREAKDOWN = { 公基: 30, 资料分析: 10, 片段阅读: 20, 逻辑填空: 10, 图形推理: 5, 类比推理: 5, 定义判断: 5, 事件排序: 5, 逻辑判断: 10, 数量关系: 10, 数字推理: 5 };
 const MODE_LABELS = { '专项训练': '专项', '模块训练': '模块', '套题训练': '套题' };
 
@@ -288,7 +289,10 @@ function renderModeOverview() {
   document.querySelector('#moduleModeBreakdown').innerHTML = MODULE_MODE_OPTIONS.map((module) => {
     const items = moduleRecords.filter((item) => normalizePracticeType(item.module) === normalizePracticeType(module));
     const value = summarizeSessions(items);
-    return `<div class="mode-stat-row"><strong>${escapeHtml(module)}</strong><b class="mode-stat-accuracy">${value.accuracy.toFixed(1)}%</b><span><i>题量</i><b>${value.total}</b></span><span><i>训练组</i><b>${items.length}</b></span><span><i>分/题</i><b>${value.speed.toFixed(2)}</b></span></div>`;
+    const target = MODULE_TIME_TARGETS[module];
+    const averageMinutes = items.length ? items.reduce((sum, item) => sum + item.minutes, 0) / items.length : null;
+    const timeClass = averageMinutes === null ? '' : averageMinutes <= target ? 'mode-time-ok' : 'mode-time-over';
+    return `<div class="mode-stat-row"><strong>${escapeHtml(module)}</strong><b class="mode-stat-accuracy">${value.accuracy.toFixed(1)}%</b><span><i>题量</i><b>${value.total}</b></span><span><i>训练组</i><b>${items.length}</b></span><span class="${timeClass}"><i>平均</i><b>${averageMinutes === null ? '--' : `${averageMinutes.toFixed(1)}分`}</b></span><span class="mode-time-target"><i>目标</i><b>${target}分</b></span></div>`;
   }).join('');
   const mockRecords = records.filter((item) => normalizeTrainingMode(item.practiceMode) === '套题训练');
   const mockTypes = new Map(Object.keys(MOCK_BREAKDOWN).map((type) => [type, { total: 0, correct: 0, sets: 0 }]));

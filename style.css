@@ -81,6 +81,9 @@ select:hover { border-color:#b9cbd2; background-color:#fbfdfd; }
 .mode-stat-row > span i { font-style:normal; }
 .mode-summary-card .mode-stat-row > span b { position:static; z-index:auto; padding:0; border:0; border-radius:0; color:#405e68; background:none; font-family:"DM Mono",monospace; font-size:9px; font-weight:500; }
 .mode-summary-card .mode-stat-row > .mode-stat-accuracy { position:static; z-index:auto; min-width:44px; padding:4px 5px; border:0; border-radius:6px; color:#3e7080; background:#eaf2f4; font-family:"DM Mono",monospace; font-size:10px; font-weight:600; text-align:center; }
+.mode-summary-card .mode-stat-row > .mode-time-ok b { color:#267c6c; }
+.mode-summary-card .mode-stat-row > .mode-time-over b { color:#c5544a; }
+.mode-summary-card .mode-stat-row > .mode-time-target b { color:#3e7080; font-weight:700; }
 .mode-mock .mode-stat-row { border-color:rgba(162,109,28,.13); }
 .mode-mock .mode-stat-row > strong { color:#72551f; }
 .mode-mock .mode-stat-row > span b { color:#715923; }
