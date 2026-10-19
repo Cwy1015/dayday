@@ -27,7 +27,7 @@ const MODULE_BREAKDOWNS = {
   资料分析: { 资料分析: 10 }
 };
 const MODULE_MODE_OPTIONS = ['言语理解', '资料分析', '判断推理', '数量关系'];
-const MOCK_BREAKDOWN = { 公基: 20, 资料分析: 10, 片段阅读: 10, 逻辑填空: 10, 图形推理: 5, 类比推理: 5, 定义判断: 5, 事件排序: 5, 逻辑判断: 10, 数量关系: 10, 数字推理: 5 };
+const MOCK_BREAKDOWN = { 公基: 30, 资料分析: 10, 片段阅读: 20, 逻辑填空: 10, 图形推理: 5, 类比推理: 5, 定义判断: 5, 事件排序: 5, 逻辑判断: 10, 数量关系: 10, 数字推理: 5 };
 const MODE_LABELS = { '专项训练': '专项', '模块训练': '模块', '套题训练': '套题' };
 
 function normalizeTrainingMode(value) {
