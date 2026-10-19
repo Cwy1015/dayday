@@ -53,15 +53,23 @@ const number = (value) => Math.max(0, Number(value) || 0);
 const MODULE_SUBMODULES = {
   公基: ['公基'], 资料分析: ['资料分析'], 言语理解: ['综合训练', '片段阅读', '逻辑填空'], 判断推理: ['综合训练', '图形推理', '类比推理', '定义判断', '逻辑判断'], 数量关系: ['综合训练', '数字推理', '数量关系'], 全科套题: ['整套试卷'], 其他: ['综合训练']
 };
+const MOCK_BREAKDOWN_TYPES = ['公基', '资料分析', '片段阅读', '逻辑填空', '图形推理', '类比推理', '定义判断', '逻辑判断', '数字推理', '数量关系'];
 const inferModule = (type) => /图形推理|类比推理|定义判断|逻辑判断/.test(type) ? '判断推理' : /逻辑填空/.test(type) ? '言语理解' : /数字推理/.test(type) ? '数量关系' : type || '其他';
 function normalizeRecord(item) {
   const legacyType = item.submodule || item.type || item.module || '综合训练';
   const module = item.module && MODULE_SUBMODULES[item.module] ? item.module : inferModule(legacyType);
   const submodule = item.submodule || (MODULE_SUBMODULES[module]?.includes(legacyType) ? legacyType : legacyType);
-  return { ...item, module, submodule, type: submodule, practiceMode: item.practiceMode || item.practice_mode || (module === '全科套题' ? '套题训练' : submodule === '综合训练' ? '大模块综合' : '专项刷题') };
+  let breakdown = item.breakdown || {};
+  if (typeof breakdown === 'string') { try { breakdown = JSON.parse(breakdown); } catch { breakdown = {}; } }
+  return { ...item, module, submodule, type: submodule, practiceMode: item.practiceMode || item.practice_mode || (module === '全科套题' ? '套题训练' : submodule === '综合训练' ? '大模块综合' : '专项刷题'), breakdown };
 }
 const displayType = (item) => `${item.module || inferModule(item.type)} · ${item.submodule || item.type} · ${item.practiceMode || '专项刷题'}`;
 const isPublicBasics = (item) => /公基|公共基础/.test(String(item.module || item.type || ''));
+function expandRecord(item) {
+  const entries = Object.entries(item.breakdown || {}).filter(([, value]) => Number(value?.total) > 0);
+  if (!entries.length) return [item];
+  return entries.map(([type, value]) => { const total = Number(value.total) || 0; const correct = Math.min(total, Number(value.correct) || 0); return { ...item, module: inferModule(type), submodule: type, type, minutes: item.total ? item.minutes * total / item.total : 0, total, correct, wrong: total - correct }; });
+}
 
 function showToast(message) {
   toast.textContent = message;
@@ -191,9 +199,10 @@ function renderDayDetail(date) {
 }
 
 function renderAnalysis() {
-  const typeMap = records.reduce((map, item) => { const key = `${item.module} · ${item.submodule} · ${item.practiceMode}`; const row = map[key] || { type: key, total: 0, correct: 0, minutes: 0 }; row.total += item.total; row.correct += item.correct; row.minutes += item.minutes; map[key] = row; return map; }, {});
+  const typeMap = records.flatMap(expandRecord).reduce((map, item) => { const key = `${item.module} · ${item.submodule} · ${item.practiceMode}`; const row = map[key] || { type: key, mode: item.practiceMode, total: 0, correct: 0, minutes: 0 }; row.total += item.total; row.correct += item.correct; row.minutes += item.minutes; map[key] = row; return map; }, {});
   const types = Object.values(typeMap).map((value) => ({ ...value, accuracy: value.correct / value.total * 100, speed: value.minutes / value.total })).sort((a, b) => b.total - a.total);
-  document.querySelector('#typeDashboard').innerHTML = types.length ? types.map((item) => { const evaluation = evaluateAbility(item.total, item.accuracy); return `<button class="type-dashboard-card ${evaluation.key}" data-type-filter="${escapeHtml(item.type)}" type="button"><div class="type-dashboard-head"><strong>${escapeHtml(item.type)}</strong><span class="type-level ${evaluation.key}">${evaluation.label}</span><b>${item.accuracy.toFixed(1)}%</b></div><div class="type-dashboard-track"><i style="width:${item.accuracy}%"></i></div><div class="type-dashboard-metrics"><span class="metric-total"><b>${item.total}</b>题</span><span class="metric-correct"><b>${item.correct}</b>对</span><span class="metric-wrong"><b>${item.total - item.correct}</b>错</span><span class="metric-time"><b>${item.minutes}</b>分钟</span><span class="metric-speed"><b>${item.speed.toFixed(2)}</b>分/题</span></div></button>`; }).join('') : '<span class="required-note">填写记录后显示题型详细数据</span>';
+  const renderType = (item) => { const evaluation = evaluateAbility(item.total, item.accuracy); return `<button class="type-dashboard-card ${evaluation.key}" data-type-filter="${escapeHtml(item.type)}" type="button"><div class="type-dashboard-head"><strong>${escapeHtml(item.type)}</strong><span class="type-level ${evaluation.key}">${evaluation.label}</span><b>${item.accuracy.toFixed(1)}%</b></div><div class="type-dashboard-track"><i style="width:${item.accuracy}%"></i></div><div class="type-dashboard-metrics"><span class="metric-total"><b>${item.total}</b>题</span><span class="metric-correct"><b>${item.correct}</b>对</span><span class="metric-wrong"><b>${item.total - item.correct}</b>错</span><span class="metric-time"><b>${Math.round(item.minutes)}</b>分钟</span><span class="metric-speed"><b>${item.speed.toFixed(2)}</b>分/题</span></div></button>`; };
+  document.querySelector('#typeDashboard').innerHTML = types.length ? ['专项刷题', '大模块综合', '套题训练'].map((mode) => { const group = types.filter((item) => item.mode === mode); return group.length ? `<div class="type-dashboard-group"><div class="type-dashboard-group-title">${mode}<span>${group.length} 类</span></div>${group.map(renderType).join('')}</div>` : ''; }).join('') : '<span class="required-note">填写记录后显示题型详细数据</span>';
 }
 
 function evaluateAbility(total, accuracy) {
@@ -209,7 +218,7 @@ function renderInsights(total, correct) {
   const generalRecords = records.filter((item) => !isPublicBasics(item));
   const accuracy = total ? (correct / total) * 100 : 0;
   const ability = evaluateAbility(total, accuracy);
-  const generalTypes = generalRecords.reduce((map, item) => { const row = map[item.type] || { total: 0, correct: 0 }; row.total += item.total; row.correct += item.correct; map[item.type] = row; return map; }, {});
+  const generalTypes = generalRecords.flatMap(expandRecord).reduce((map, item) => { const key = `${item.module} · ${item.submodule} · ${item.practiceMode}`; const row = map[key] || { total: 0, correct: 0 }; row.total += item.total; row.correct += item.correct; map[key] = row; return map; }, {});
   const weakTypes = Object.entries(generalTypes).map(([type, value]) => ({ type, accuracy: value.correct / value.total * 100, total: value.total })).filter((item) => item.total >= 30 && item.accuracy < 80).sort((a, b) => a.accuracy - b.accuracy).slice(0, 2);
   document.querySelector('#abilityLevel').textContent = ability.label;
   document.querySelector('#abilityLevel').className = `ability-level-${ability.key}`;
@@ -223,12 +232,11 @@ function renderInsights(total, correct) {
   document.querySelector('#targetSpeed').value = targets.speed;
   document.querySelector('#targetSummary').textContent = accuracy >= targets.accuracy ? '当前正确率已达到目标' : `还差 ${(targets.accuracy - accuracy).toFixed(1)} 个百分点`;
 
-  const typeTotals = records.reduce((map, item) => { const key = `${item.module} · ${item.submodule} · ${item.practiceMode}`; map[key] = (map[key] || 0) + item.total; return map; }, {});
+  const typeTotals = records.flatMap(expandRecord).reduce((map, item) => { const key = `${item.module} · ${item.submodule} · ${item.practiceMode}`; map[key] = (map[key] || 0) + item.total; return map; }, {});
   // Keep every recorded subject visible; the panel itself scrolls as subjects grow.
   const topTypes = Object.entries(typeTotals).sort((a, b) => b[1] - a[1]);
-  const typeMax = Math.max(...topTypes.map((item) => item[1]), 1);
   document.querySelector('#typeBars').innerHTML = topTypes.length
-    ? topTypes.map(([type, value]) => `<button class="type-row" data-type-filter="${escapeHtml(type)}" type="button"><span title="${escapeHtml(type)}">${escapeHtml(type)}</span><i class="type-track"><b style="width:${(value / typeMax) * 100}%"></b></i><span>${value} 题</span></button>`).join('')
+    ? ['专项刷题', '大模块综合', '套题训练'].map((mode) => { const group = topTypes.filter(([type]) => type.endsWith(`· ${mode}`)); const max = Math.max(...group.map((item) => item[1]), 1); return group.length ? `<div class="type-bars-group"><b>${mode}</b>${group.map(([type, value]) => `<button class="type-row" data-type-filter="${escapeHtml(type)}" type="button"><span title="${escapeHtml(type)}">${escapeHtml(type).replace(` · ${mode}`, '')}</span><i class="type-track"><b style="width:${(value / max) * 100}%"></b></i><span>${value} 题</span></button>`).join('')}</div>` : ''; }).join('')
     : '<span class="required-note">填写记录后显示题型分布</span>';
   document.querySelector('#topType').textContent = topTypes[0] ? `最多：${topTypes[0][0]}` : '暂无数据';
 
@@ -275,7 +283,7 @@ function renderDiagnosis(generalRecords) {
   document.querySelector('#trendSpeed').textContent = enoughTrend ? `${speedDelta >= 0 ? '+' : ''}${speedDelta.toFixed(2)} 分/题` : '--';
   document.querySelector('#trendSamples').textContent = `${generalRecords.length} 组`;
 
-  const typeMap = generalRecords.reduce((map, item) => { const key = `${item.module} · ${item.submodule} · ${item.practiceMode}`; const row = map[key] || { type: key, total: 0, correct: 0, minutes: 0 }; row.total += item.total; row.correct += item.correct; row.minutes += item.minutes; map[key] = row; return map; }, {});
+  const typeMap = generalRecords.flatMap(expandRecord).reduce((map, item) => { const key = `${item.module} · ${item.submodule} · ${item.practiceMode}`; const row = map[key] || { type: key, total: 0, correct: 0, minutes: 0 }; row.total += item.total; row.correct += item.correct; row.minutes += item.minutes; map[key] = row; return map; }, {});
   const types = Object.values(typeMap).map((value) => ({ type: value.type, total: value.total, accuracy: value.correct / value.total * 100, speed: value.minutes / value.total })).filter((item) => item.total >= 30);
   const groups = { strongFast: [], strongSlow: [], weakFast: [], weakSlow: [] };
   types.forEach((item) => { const strong = item.accuracy >= targets.accuracy; const fast = item.speed <= targets.speed; groups[`${strong ? 'strong' : 'weak'}${fast ? 'Fast' : 'Slow'}`].push(item); });
@@ -310,7 +318,7 @@ function renderRecords() {
     return `<article class="record">
       <div class="record-top"><span class="record-date">${moneyDate(item.date)}</span><div class="record-actions"><button data-edit="${item.id}">编辑</button><button data-delete="${item.id}">删除</button></div></div>
       <div class="record-type">${escapeHtml(displayType(item))}<small class="record-mode">${escapeHtml(item.practiceMode)}</small></div>
-      <div class="record-metrics"><span class="metric"><b>${item.minutes}</b> 分钟</span><span class="metric"><b>${item.total}</b> 题</span><span class="metric good">正确 <b>${item.correct}</b></span><span class="metric">错误 <b>${item.wrong}</b></span><span class="metric">正确率 <b>${accuracy}%</b></span></div>
+      <div class="record-metrics"><span class="metric"><b>${item.minutes}</b> 分钟</span><span class="metric"><b>${item.total}</b> 题</span><span class="metric good">正确 <b>${item.correct}</b></span><span class="metric">错误 <b>${item.wrong}</b></span><span class="metric">正确率 <b>${accuracy}%</b></span></div>${item.breakdown && Object.keys(item.breakdown).length ? `<div class="record-breakdown">${Object.entries(item.breakdown).map(([type, value]) => `<span>${escapeHtml(type)} <b>${Number(value.total) - Number(value.correct)} 错</b></span>`).join('')}</div>` : ''}
     </article>`;
   }).join('');
 }
@@ -368,6 +376,21 @@ function updatePracticeMode() {
   form.elements.module.disabled = isMock;
   form.elements.submodule.disabled = isMock;
   updateSubmoduleOptions();
+  renderMockBreakdown();
+}
+
+function renderMockBreakdown() {
+  const panel = document.querySelector('#mockBreakdown');
+  const fields = document.querySelector('#mockBreakdownFields');
+  const visible = form.elements.practiceMode.value === '套题训练';
+  panel.hidden = !visible;
+  if (!visible) { fields.innerHTML = ''; return; }
+  const current = records.find((item) => item.id === form.elements.id.value)?.breakdown || {};
+  fields.innerHTML = MOCK_BREAKDOWN_TYPES.map((type) => `<label><span>${type}</span><input type="number" min="0" data-breakdown-total="${type}" value="${current[type]?.total || ''}" placeholder="题数" /><input type="number" min="0" data-breakdown-correct="${type}" value="${current[type]?.correct || ''}" placeholder="正确" /></label>`).join('');
+}
+
+function readMockBreakdown() {
+  return Object.fromEntries(MOCK_BREAKDOWN_TYPES.map((type) => [type, { total: number(document.querySelector(`[data-breakdown-total="${type}"]`)?.value), correct: number(document.querySelector(`[data-breakdown-correct="${type}"]`)?.value) }]).filter(([, value]) => value.total > 0));
 }
 
 function editRecord(id) {
@@ -381,14 +404,14 @@ function editRecord(id) {
 }
 
 async function cloudInsert(item) {
-  const data = await restRequest('training_sessions', { method: 'POST', body: JSON.stringify({ session_date: item.date, module: item.module, submodule: item.submodule, practice_mode: item.practiceMode, total: item.total, correct: item.correct, minutes: item.minutes }) });
+  const data = await restRequest('training_sessions', { method: 'POST', body: JSON.stringify({ session_date: item.date, module: item.module, submodule: item.submodule, practice_mode: item.practiceMode, breakdown: item.breakdown || null, total: item.total, correct: item.correct, minutes: item.minutes }) });
   return data?.[0];
 }
 
 async function cloudUpdate(item) {
   if (!item.id.startsWith('cloud-')) return;
   const id = item.id.slice(6);
-  await restRequest(`training_sessions?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ session_date: item.date, module: item.module, submodule: item.submodule, practice_mode: item.practiceMode, total: item.total, correct: item.correct, minutes: item.minutes }) });
+  await restRequest(`training_sessions?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ session_date: item.date, module: item.module, submodule: item.submodule, practice_mode: item.practiceMode, breakdown: item.breakdown || null, total: item.total, correct: item.correct, minutes: item.minutes }) });
 }
 
 async function cloudDelete(item) {
@@ -398,14 +421,14 @@ async function cloudDelete(item) {
 
 async function loadCloudRecords() {
   let data;
-  try { data = await restRequest('training_sessions?select=id,module,submodule,practice_mode,total,correct,minutes,session_date,created_at&order=session_date.desc'); }
+  try { data = await restRequest('training_sessions?select=id,module,submodule,practice_mode,breakdown,total,correct,minutes,session_date,created_at&order=session_date.desc'); }
   catch (error) {
     try { data = await restRequest('training_sessions?select=id,module,total,correct,minutes,session_date,created_at&order=session_date.desc'); }
     catch (fallbackError) { cloudReady = false; syncStatus.textContent = `云端错误：${fallbackError.message.slice(0, 40)}`; return; }
   }
   if (!data) { cloudReady = false; syncStatus.textContent = '云端不可用，本机数据保留'; return; }
   cloudReady = true;
-    const cloudRecords = data.map((item) => normalizeRecord({ id: `cloud-${item.id}`, date: item.session_date, type: item.submodule || item.module, module: item.module, submodule: item.submodule, practiceMode: item.practice_mode, minutes: item.minutes, total: item.total, correct: item.correct, wrong: item.total - item.correct }));
+    const cloudRecords = data.map((item) => normalizeRecord({ id: `cloud-${item.id}`, date: item.session_date, type: item.submodule || item.module, module: item.module, submodule: item.submodule, practiceMode: item.practice_mode, breakdown: item.breakdown, minutes: item.minutes, total: item.total, correct: item.correct, wrong: item.total - item.correct }));
   const localOnly = records.filter((local) => !cloudRecords.some((cloud) => cloud.date === local.date && cloud.module === local.module && cloud.submodule === local.submodule && cloud.practiceMode === local.practiceMode && cloud.total === local.total && cloud.correct === local.correct));
   // Never replace local data with an empty or incomplete cloud response.
   records = [...cloudRecords, ...localOnly];
@@ -416,7 +439,7 @@ async function loadCloudRecords() {
 
 async function syncLocalRecords() {
   let cloudData;
-  try { cloudData = await restRequest('training_sessions?select=id,module,submodule,practice_mode,total,correct,minutes,session_date'); }
+  try { cloudData = await restRequest('training_sessions?select=id,module,submodule,practice_mode,breakdown,total,correct,minutes,session_date'); }
   catch { try { cloudData = await restRequest('training_sessions?select=id,module,total,correct,minutes,session_date'); } catch { return; } }
   const cloudRecords = (cloudData || []).map((item) => normalizeRecord({ ...item, date: item.session_date, type: item.submodule || item.module, practiceMode: item.practice_mode }));
   const pending = records.filter((local) => !local.id.startsWith('cloud-') && !cloudRecords.some((remote) => remote.date === local.date && remote.module === local.module && remote.submodule === local.submodule && remote.practiceMode === local.practiceMode && remote.total === local.total && remote.correct === local.correct));
@@ -439,7 +462,12 @@ form.addEventListener('submit', async (event) => {
   const correct = Math.min(total, number(data.get('correct')));
   const module = String(data.get('module') || '').trim();
   const submodule = String(data.get('submodule') || '').trim();
-  const item = { id: data.get('id') || `${Date.now()}`, date: data.get('date'), module, submodule, type: submodule, practiceMode: data.get('practiceMode') || '专项刷题', minutes: number(data.get('minutes')), total, correct, wrong: total - correct };
+  const practiceMode = data.get('practiceMode') || '专项刷题';
+  const breakdown = practiceMode === '套题训练' ? readMockBreakdown() : {};
+  const breakdownTotal = Object.values(breakdown).reduce((sum, value) => sum + value.total, 0);
+  const breakdownCorrect = Object.values(breakdown).reduce((sum, value) => sum + Math.min(value.total, value.correct), 0);
+  if (practiceMode === '套题训练' && (!breakdownTotal || breakdownTotal !== total || breakdownCorrect !== correct)) return showToast('套题明细的题数和正确数必须与上方总数一致');
+  const item = { id: data.get('id') || `${Date.now()}`, date: data.get('date'), module, submodule, type: submodule, practiceMode, breakdown, minutes: number(data.get('minutes')), total, correct, wrong: total - correct };
   if (!item.date || !item.module || !item.submodule || !total) return showToast('请填写日期、大模块、小模块和题数');
   const index = records.findIndex((record) => record.id === item.id);
   const isEdit = index >= 0;
@@ -460,6 +488,13 @@ form.addEventListener('submit', async (event) => {
 });
 
 document.querySelector('#resetForm').addEventListener('click', resetForm);
+document.querySelector('#mockBreakdownFields').addEventListener('input', () => {
+  if (form.elements.practiceMode.value !== '套题训练') return;
+  const breakdown = readMockBreakdown();
+  form.elements.total.value = Object.values(breakdown).reduce((sum, value) => sum + value.total, 0) || '';
+  form.elements.correct.value = Object.values(breakdown).reduce((sum, value) => sum + Math.min(value.total, value.correct), 0) || '';
+  updateWrong();
+});
 form.elements.module.addEventListener('change', () => { if (form.elements.module.value === '全科套题') form.elements.practiceMode.value = '套题训练'; updatePracticeMode(); });
 form.elements.practiceMode.addEventListener('change', updatePracticeMode);
 document.querySelector('#prevMonth').addEventListener('click', () => { calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1); renderCalendar(); });
