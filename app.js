@@ -19,7 +19,13 @@ const memoryForm = document.querySelector('#memoryForm');
 const memoryList = document.querySelector('#memoryList');
 function normalizePracticeType(type) { return String(type || '').trim() === '言语理解' ? '片段阅读' : type; }
 const TRAINING_MODES = ['专项训练', '模块训练', '套题训练'];
-const TRAINING_TYPES = ['公基', '资料分析', '片段阅读', '逻辑填空', '图形推理', '类比推理', '定义判断', '逻辑判断', '数量关系', '数字推理'];
+const TRAINING_TYPES = ['公基', '资料分析', '片段阅读', '逻辑填空', '图形推理', '类比推理', '定义判断', '事件排序', '逻辑判断', '数量关系', '数字推理'];
+const TRAINING_MODULES = ['公基', '资料分析', '片段阅读', '逻辑填空', '判断推理', '图形推理', '类比推理', '定义判断', '事件排序', '逻辑判断', '数量关系', '数字推理'];
+const MODULE_BREAKDOWNS = {
+  判断推理: { 图形推理: 5, 类比推理: 5, 定义判断: 5, 事件排序: 5, 逻辑判断: 10 },
+  数量关系: { 数字推理: 5, 数量关系: 10 }
+};
+const MOCK_BREAKDOWN = { 公基: 20, 资料分析: 10, 片段阅读: 10, 逻辑填空: 10, 图形推理: 5, 类比推理: 5, 定义判断: 5, 事件排序: 5, 逻辑判断: 10, 数量关系: 10, 数字推理: 5 };
 const MODE_LABELS = { '专项训练': '专项', '模块训练': '模块', '套题训练': '套题' };
 
 function normalizeTrainingMode(value) {
@@ -175,14 +181,16 @@ function updateWrong() {
   form.elements.wrong.value = Math.max(0, total - correct);
 }
 
-function buildMockBreakdown() {
+function buildModeBreakdown(mode, module) {
   const container = document.querySelector('.mock-breakdown-grid');
-  container.innerHTML = TRAINING_TYPES.map((type) => `<div class="mock-breakdown-row"><span>${type}</span><input type="number" min="0" step="1" placeholder="题数" data-breakdown-total="${type}"><input type="number" min="0" step="1" placeholder="正确" data-breakdown-correct="${type}"></div>`).join('');
-  container.addEventListener('input', updateMockTotals);
+  const preset = mode === '套题训练' ? MOCK_BREAKDOWN : (MODULE_BREAKDOWNS[module] || {});
+  container.innerHTML = Object.entries(preset).map(([type, total]) => `<div class="mock-breakdown-row"><span>${type}</span><input type="number" min="0" step="1" value="${total}" data-breakdown-total="${type}" aria-label="${type}题数"><input type="number" min="0" max="${total}" step="1" placeholder="填正确数" data-breakdown-correct="${type}" aria-label="${type}正确数"></div>`).join('');
+  document.querySelector('#breakdownTitle').textContent = mode === '套题训练' ? '套题分题型记录' : `${module}小模块记录`;
+  document.querySelector('#breakdownHint').textContent = mode === '套题训练' ? '题量已预置，只需要填写各题型正确数' : '小模块题量已预置，只需要填写各项正确数';
 }
 
 function updateMockTotals() {
-  if (form.elements.practiceMode.value !== '套题训练') return;
+  if (!['套题训练', '模块训练'].includes(form.elements.practiceMode.value)) return;
   const total = [...document.querySelectorAll('[data-breakdown-total]')].reduce((sum, node) => sum + number(node.value), 0);
   const correct = [...document.querySelectorAll('[data-breakdown-correct]')].reduce((sum, node) => sum + number(node.value), 0);
   form.elements.total.value = total || '';
@@ -195,9 +203,9 @@ function updateModuleOptions() {
   const module = form.elements.module.value;
   const field = document.querySelector('#submoduleField');
   const select = form.elements.submodule;
-  if (mode === '套题训练') { field.hidden = true; select.disabled = true; return; }
-  field.hidden = false; select.disabled = false;
-  const options = mode === '模块训练' ? ['综合训练'] : [module || ''].filter(Boolean);
+  if (mode !== '专项训练') { field.hidden = true; select.disabled = true; return; }
+  field.hidden = true; select.disabled = true;
+  const options = [module || ''].filter(Boolean);
   select.innerHTML = options.length ? options.map((item) => `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`).join('') : '<option value="" disabled selected>先选择模块</option>';
   select.value = options[0] || '';
 }
@@ -205,11 +213,15 @@ function updateModuleOptions() {
 function updateTrainingMode() {
   const mode = form.elements.practiceMode.value;
   const mock = mode === '套题训练';
+  const module = form.elements.module.value;
   document.querySelector('#sessionNameField').hidden = !mock;
-  document.querySelector('#mockBreakdown').hidden = !mock;
+  document.querySelector('#moduleField').hidden = mock;
+  document.querySelector('#modeBreakdown').hidden = !(mock || (mode === '模块训练' && MODULE_BREAKDOWNS[module]));
+  document.querySelector('#moduleLabel').textContent = mode === '专项训练' ? '刷题类型' : '训练模块';
   form.elements.module.disabled = mock;
-  if (mock) { form.elements.module.value = '套题'; form.elements.submodule.value = '整套试卷'; }
-  else if (!form.elements.module.value) form.elements.module.value = '';
+  if (mode === '专项训练') form.elements.module.setAttribute('required', '');
+  if (mock) { form.elements.module.value = '套题'; form.elements.submodule.value = '整套试卷'; buildModeBreakdown(mode); }
+  else if (mode === '模块训练') { buildModeBreakdown(mode, module); }
   updateModuleOptions();
   if (mock) updateMockTotals();
 }
@@ -450,8 +462,9 @@ function resetForm() {
   form.elements.date.value = today();
   form.elements.practiceMode.value = '专项训练';
   form.elements.module.value = '';
+  document.querySelector('#moduleField').hidden = false;
   document.querySelector('#sessionNameField').hidden = true;
-  document.querySelector('#mockBreakdown').hidden = true;
+  document.querySelector('#modeBreakdown').hidden = true;
   updateModuleOptions();
   form.elements.wrong.value = '';
   document.querySelector('#formTitle').textContent = '记录今天';
@@ -467,7 +480,7 @@ function editRecord(id) {
   form.elements.module.value = item.practiceMode === '套题训练' ? '' : item.module || item.type;
   form.elements.sessionName.value = item.sessionName || '';
   updateTrainingMode();
-  if (item.practiceMode === '套题训练') fillMockBreakdown(item.breakdown);
+  if (item.practiceMode === '套题训练' || item.practiceMode === '模块训练') { updateTrainingMode(); fillMockBreakdown(item.breakdown); }
   else { form.elements.submodule.value = item.submodule || item.type; updateModuleOptions(); }
   form.elements.minutes.value = item.minutes;
   form.elements.total.value = item.total;
@@ -543,7 +556,7 @@ form.addEventListener('submit', async (event) => {
   const item = normalizeRecord({ id: data.get('id') || `${Date.now()}`, date: data.get('date'), type: submodule, module, submodule, practiceMode, sessionName: data.get('sessionName').trim(), breakdown, minutes: number(data.get('minutes')), total, correct, wrong: total - correct });
   const breakdownTotal = breakdown ? Object.values(breakdown).reduce((sum, value) => sum + value.total, 0) : total;
   if (!item.date || !module || !total) return showToast('请填写日期、模块和题数');
-  if (practiceMode === '套题训练' && breakdownTotal !== total) return showToast('套题总题数需要由分题型明细自动汇总');
+  if ((practiceMode === '套题训练' || practiceMode === '模块训练') && breakdownTotal !== total) return showToast('总题数需要由分题型明细自动汇总');
   const index = records.findIndex((record) => record.id === item.id);
   const isEdit = index >= 0;
   if (isEdit) records[index] = item; else records.push(item);
@@ -646,7 +659,7 @@ async function syncCloud() {
 authButton.addEventListener('click', syncCloud);
 
 document.querySelector('#todayLabel').textContent = moneyDate(today());
-buildMockBreakdown();
+document.querySelector('#modeBreakdown').addEventListener('input', updateMockTotals);
 resetForm();
 renderStats();
 renderRecords();
