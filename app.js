@@ -236,11 +236,15 @@ function updateTrainingMode() {
   const fixedBreakdown = mock || mode === '模块训练';
   form.elements.total.readOnly = fixedBreakdown;
   form.elements.correct.readOnly = fixedBreakdown;
+  document.querySelector('#totalField').hidden = fixedBreakdown;
+  document.querySelector('#answerCountFields').hidden = fixedBreakdown;
+  form.elements.total.required = !fixedBreakdown;
+  form.elements.correct.required = !fixedBreakdown;
   if (mode === '专项训练') form.elements.module.setAttribute('required', '');
   if (mock) { form.elements.module.value = '套题'; form.elements.submodule.value = '整套试卷'; buildModeBreakdown(mode); }
   else if (mode === '模块训练') { buildModeBreakdown(mode, module); }
   updateModuleOptions();
-  if (mock) updateMockTotals();
+  if (fixedBreakdown) updateMockTotals();
 }
 
 function readMockBreakdown() {

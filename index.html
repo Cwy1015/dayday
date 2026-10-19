@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@500;600;700;800&family=Noto+Serif+SC:wght@600;700;900&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="style.css?v=training-modes-2" />
+    <link rel="stylesheet" href="style.css?v=training-modes-3" />
   </head>
   <body>
     <section id="accessGate" class="access-gate"><div class="access-card"><span class="brand-mark">考</span><h1>CC Day</h1><p>请使用完整访问链接打开</p><small>这是个人记录空间</small></div></section>
@@ -69,8 +69,8 @@
             <div class="form-row"><label>日期<input name="date" type="date" required /></label><label>训练模式<select name="practiceMode" id="practiceMode" required><option value="专项训练">专项训练</option><option value="模块训练">模块训练</option><option value="套题训练">套题训练</option></select></label></div>
             <div class="form-row"><label id="moduleField"><span id="moduleLabel">刷题类型</span><select name="module" id="trainingModule" required><option value="" disabled selected>请选择题型</option><option value="公基">公基</option><option value="资料分析">资料分析</option><option value="片段阅读">片段阅读</option><option value="逻辑填空">逻辑填空</option><option value="判断推理">判断推理</option><option value="图形推理">图形推理</option><option value="类比推理">类比推理</option><option value="定义判断">定义判断</option><option value="事件排序">事件排序</option><option value="逻辑判断">逻辑判断</option><option value="数量关系">数量关系</option><option value="数字推理">数字推理</option></select></label><label id="submoduleField" hidden>具体题型<select name="submodule" id="trainingSubmodule"><option value="" disabled selected>请选择题型</option></select></label><label id="sessionNameField" hidden>套题名称<input name="sessionName" placeholder="例如：联考模拟卷一" /></label></div>
             <div id="modeBreakdown" class="mock-breakdown" hidden><div class="mock-breakdown-head"><b id="breakdownTitle">分题型记录</b><small id="breakdownHint">题量已预置，只需要填写正确数</small></div><div class="mock-breakdown-grid"></div></div>
-            <div class="form-row"><label>总用时（分钟）<input name="minutes" type="number" min="0" step="1" placeholder="例如：45" required /></label><label>总题数<input name="total" type="number" min="1" step="1" placeholder="例如：30" required /></label></div>
-            <div class="form-row"><label>正确数量<input name="correct" type="number" min="0" step="1" placeholder="例如：24" required /></label><label>错误数量<input name="wrong" type="number" readonly placeholder="自动计算" /></label></div>
+            <div class="form-row"><label>总用时（分钟）<input name="minutes" type="number" min="0" step="1" placeholder="例如：45" required /></label><label id="totalField">总题数<input name="total" type="number" min="1" step="1" placeholder="例如：30" required /></label></div>
+            <div class="form-row" id="answerCountFields"><label id="correctField">正确数量<input name="correct" type="number" min="0" step="1" placeholder="例如：24" required /></label><label id="wrongField">错误数量<input name="wrong" type="number" readonly placeholder="自动计算" /></label></div>
             <div class="form-actions"><button class="save-btn" type="submit">保存记录</button><button class="text-btn" id="resetForm" type="button">清空</button></div>
           </form>
           <p class="form-tip">数据会直接保存到云端，手机、平板打开同一地址即可看到。</p>
@@ -113,6 +113,6 @@
     <div class="toast" id="toast" role="status"></div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=visual-2"></script>
-    <script src="app.js?v=training-modes-3"></script>
+    <script src="app.js?v=training-modes-4"></script>
   </body>
 </html>
