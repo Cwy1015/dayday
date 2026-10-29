@@ -654,7 +654,6 @@ document.querySelector('#openMemoryLibrary').addEventListener('click', async () 
 });
 document.querySelector('#closeMemory').addEventListener('click', () => { setMemoryModal(memoryModal, false); });
 document.querySelector('#closeMemoryLibrary').addEventListener('click', () => { setMemoryModal(memoryLibraryModal, false); });
-memoryModal.addEventListener('click', (event) => { if (event.target === memoryModal) setMemoryModal(memoryModal, false); });
 memoryLibraryModal.addEventListener('click', (event) => { if (event.target === memoryLibraryModal) setMemoryModal(memoryLibraryModal, false); });
 memoryList.addEventListener('click', (event) => {
   const toggle = event.target.closest('[data-answer-toggle]');
