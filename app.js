@@ -71,6 +71,7 @@ async function restRequest(path, options = {}) {
   if (!config.url || !config.anonKey) throw new Error('Supabase 配置缺失');
   const response = await fetch(`${config.url}/rest/v1/${path}`, {
     ...options,
+    cache: 'no-store',
     headers: {
       apikey: config.anonKey,
       Authorization: `Bearer ${config.anonKey}`,
@@ -154,13 +155,14 @@ function renderMemoryList() {
 async function loadMemoryCards() {
   let data;
   try { data = await restRequest('memory_cards?select=id,card_date,category,content,answer,content_image,answer_image,created_at&order=card_date.desc,created_at.desc'); }
-  catch { return; }
-  if (!data) return;
+  catch { return false; }
+  if (!data) return false;
   const cloudCards = data.map((item) => ({ id: `cloud-${item.id}`, date: item.card_date, category: item.category, content: item.content || '', answer: item.answer || '', contentImage: item.content_image || '', answerImage: item.answer_image || '', createdAt: item.created_at || '' }));
   const localOnly = memoryRecords.filter((local) => !cloudCards.some((cloud) => cloud.id === local.id || cloud.id === `cloud-${local.id}` || (cloud.createdAt && local.createdAt && cloud.createdAt === local.createdAt) || (cloud.date === local.date && cloud.category === local.category && cloud.content === local.content && cloud.contentImage === local.contentImage)));
   memoryRecords = dedupeMemoryRecords([...cloudCards, ...localOnly]);
   saveMemoryLocal();
   renderMemoryList();
+  return true;
 }
 
 async function saveMemoryCloud(item) {
@@ -641,7 +643,15 @@ document.querySelector('#clearFilters').addEventListener('click', () => { catego
 }));
 document.querySelector('#retrySync').addEventListener('click', syncCloud);
 document.querySelector('#openMemory').addEventListener('click', () => { editingMemory = false; setMemoryModal(memoryModal, true); resetMemoryForm(); });
-document.querySelector('#openMemoryLibrary').addEventListener('click', () => { setMemoryModal(memoryLibraryModal, true); renderMemoryList(); });
+document.querySelector('#openMemoryLibrary').addEventListener('click', async () => {
+  setMemoryModal(memoryLibraryModal, true);
+  memoryList.innerHTML = '<div class="memory-empty">正在获取最新记忆…</div>';
+  const loaded = await loadMemoryCards();
+  if (!loaded) {
+    renderMemoryList();
+    showToast('云端读取失败，当前显示本机缓存');
+  }
+});
 document.querySelector('#closeMemory').addEventListener('click', () => { setMemoryModal(memoryModal, false); });
 document.querySelector('#closeMemoryLibrary').addEventListener('click', () => { setMemoryModal(memoryLibraryModal, false); });
 memoryModal.addEventListener('click', (event) => { if (event.target === memoryModal) setMemoryModal(memoryModal, false); });
