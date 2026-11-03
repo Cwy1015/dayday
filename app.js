@@ -148,8 +148,9 @@ function dedupeMemoryRecords(items) {
 }
 
 function renderMemoryList() {
-  document.querySelector('#memoryCount').textContent = `${memoryRecords.length} 条`;
-  memoryList.innerHTML = [...memoryRecords].sort((a, b) => memoryOrderValue(a) - memoryOrderValue(b)).map((item) => { const content = item.content ? `<h3>${escapeHtml(item.content)}</h3>` : ''; const contentImage = item.contentImage ? `<img class="memory-image" src="${item.contentImage}" alt="记忆内容图片" />` : ''; const answer = item.answer || item.answerImage; return `<article class="memory-card" data-memory-card="${item.id}"><div class="memory-card-head"><span>记忆卡片</span><div><button type="button" data-memory-edit="${item.id}">编辑</button><button type="button" data-memory-delete="${item.id}">删除</button></div></div>${content}${contentImage}${answer ? `<div class="memory-answer-row"><button class="answer-toggle" type="button" data-answer-toggle="${item.id}">显示答案</button></div><div class="memory-answer" data-answer="${item.id}" hidden>${item.answer ? `<p>${escapeHtml(item.answer)}</p>` : ''}${item.answerImage ? `<img class="memory-image" src="${item.answerImage}" alt="答案图片" />` : ''}</div>` : '<small class="no-answer">这是一张无答案记忆卡</small>'}</article>`; }).join('') || '<div class="memory-empty">还没有记忆内容，先添加一张卡片吧。</div>';
+  const pendingCount = memoryRecords.filter((item) => !String(item.id).startsWith('cloud-')).length;
+  document.querySelector('#memoryCount').textContent = pendingCount ? `${memoryRecords.length} 条（${pendingCount} 条待同步）` : `${memoryRecords.length} 条`;
+  memoryList.innerHTML = [...memoryRecords].sort((a, b) => memoryOrderValue(a) - memoryOrderValue(b)).map((item) => { const content = item.content ? `<h3>${escapeHtml(item.content)}</h3>` : ''; const contentImage = item.contentImage ? `<img class="memory-image" src="${item.contentImage}" alt="记忆内容图片" />` : ''; const answer = item.answer || item.answerImage; const pending = !String(item.id).startsWith('cloud-') ? '<small class="no-answer">本机待同步</small>' : ''; return `<article class="memory-card" data-memory-card="${item.id}"><div class="memory-card-head"><span>记忆卡片 ${pending}</span><div><button type="button" data-memory-edit="${item.id}">编辑</button><button type="button" data-memory-delete="${item.id}">删除</button></div></div>${content}${contentImage}${answer ? `<div class="memory-answer-row"><button class="answer-toggle" type="button" data-answer-toggle="${item.id}">显示答案</button></div><div class="memory-answer" data-answer="${item.id}" hidden>${item.answer ? `<p>${escapeHtml(item.answer)}</p>` : ''}${item.answerImage ? `<img class="memory-image" src="${item.answerImage}" alt="答案图片" />` : ''}</div>` : '<small class="no-answer">这是一张无答案记忆卡</small>'}</article>`; }).join('') || '<div class="memory-empty">还没有记忆内容，先添加一张卡片吧。</div>';
 }
 
 async function loadMemoryCards() {
@@ -157,12 +158,37 @@ async function loadMemoryCards() {
   try { data = await restRequest('memory_cards?select=id,card_date,category,content,answer,content_image,answer_image,created_at&order=card_date.desc,created_at.desc'); }
   catch { return false; }
   if (!data) return false;
-  const cloudCards = data.map((item) => ({ id: `cloud-${item.id}`, date: item.card_date, category: item.category, content: item.content || '', answer: item.answer || '', contentImage: item.content_image || '', answerImage: item.answer_image || '', createdAt: item.created_at || '' }));
-  const localOnly = memoryRecords.filter((local) => !cloudCards.some((cloud) => cloud.id === local.id || cloud.id === `cloud-${local.id}` || (cloud.createdAt && local.createdAt && cloud.createdAt === local.createdAt) || (cloud.date === local.date && cloud.category === local.category && cloud.content === local.content && cloud.contentImage === local.contentImage)));
-  memoryRecords = dedupeMemoryRecords([...cloudCards, ...localOnly]);
+  const toCards = (rows) => rows.map((item) => ({ id: `cloud-${item.id}`, date: item.card_date, category: item.category, content: item.content || '', answer: item.answer || '', contentImage: item.content_image || '', answerImage: item.answer_image || '', createdAt: item.created_at || '' }));
+  const matchesCloud = (local, cloudCards) => cloudCards.some((cloud) => cloud.id === local.id || cloud.id === `cloud-${local.id}` || (cloud.createdAt && local.createdAt && cloud.createdAt === local.createdAt) || (cloud.date === local.date && cloud.category === local.category && cloud.content === local.content && cloud.contentImage === local.contentImage));
+  let cloudCards = toCards(data);
+  const pending = memoryRecords.filter((local) => !String(local.id).startsWith('cloud-') && !matchesCloud(local, cloudCards));
+  const failed = [];
+  const uploadedCards = [];
+  let uploaded = false;
+  for (const local of pending) {
+    try {
+      const created = await saveMemoryCloud(local);
+      if (!created?.id) throw new Error('Cloud insert returned no row');
+      local.id = `cloud-${created.id}`;
+      local.createdAt = created.created_at || local.createdAt;
+      uploadedCards.push(local);
+      uploaded = true;
+    } catch {
+      failed.push(local);
+    }
+  }
+  if (uploaded) {
+    saveMemoryLocal();
+    try {
+      const refreshed = await restRequest('memory_cards?select=id,card_date,category,content,answer,content_image,answer_image,created_at&order=card_date.desc,created_at.desc');
+      if (refreshed) cloudCards = toCards(refreshed);
+      else cloudCards = dedupeMemoryRecords([...cloudCards, ...uploadedCards]);
+    } catch { cloudCards = dedupeMemoryRecords([...cloudCards, ...uploadedCards]); }
+  }
+  memoryRecords = dedupeMemoryRecords([...cloudCards, ...failed]);
   saveMemoryLocal();
   renderMemoryList();
-  return true;
+  return { success: true, pending: failed.length };
 }
 
 async function saveMemoryCloud(item) {
@@ -650,6 +676,8 @@ document.querySelector('#openMemoryLibrary').addEventListener('click', async () 
   if (!loaded) {
     renderMemoryList();
     showToast('云端读取失败，当前显示本机缓存');
+  } else if (loaded.pending) {
+    showToast(`${loaded.pending} 条记忆暂未同步到云端`);
   }
 });
 document.querySelector('#closeMemory').addEventListener('click', () => { setMemoryModal(memoryModal, false); });
